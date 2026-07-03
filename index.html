@@ -29,7 +29,6 @@
   }}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:430px;margin:0 auto}
-
   .nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:.5px solid var(--border);padding:calc(var(--safe-top) + 12px) 18px 12px}
   .nav-inner{display:flex;align-items:center;justify-content:space-between}
   .nav-left{display:flex;flex-direction:column;gap:2px}
@@ -40,22 +39,18 @@
   .dot.loading{background:var(--accent);animation:blink .7s infinite}
   .dot.error{background:var(--danger)}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-
   .currency-toggle{display:flex;border:.5px solid var(--border-strong);border-radius:20px;overflow:hidden;background:var(--surface2)}
   .cur-btn{padding:5px 12px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--text3);cursor:pointer;font-family:inherit;letter-spacing:.3px;transition:all .15s}
   .cur-btn.active{background:var(--accent);color:#fff;border-radius:20px}
-
   .tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surface);border-top:.5px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;border:none;background:transparent;color:var(--text3);font-size:10px;cursor:pointer}
   .tab.active{color:var(--accent)}
   .tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-
   .page{display:none;padding:14px 14px calc(80px + var(--safe-bottom))}
   .page.active{display:block}
-
   .ph{background:var(--surface);border-radius:var(--radius);padding:22px 20px 18px;margin-bottom:14px;border:.5px solid var(--border)}
   .ph-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
-  .ph-value{font-size:38px;font-weight:700;letter-spacing:-1.5px;line-height:1;margin-bottom:10px;transition:color .2s}
+  .ph-value{font-size:38px;font-weight:700;letter-spacing:-1.5px;line-height:1;margin-bottom:10px}
   .ph-value.dim{color:var(--text3)}
   .ph-sub{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .badge{display:inline-flex;align-items:center;font-size:13px;font-weight:600;padding:4px 10px;border-radius:20px}
@@ -63,25 +58,21 @@
   .badge.dn{background:var(--danger-bg);color:var(--danger)}
   .badge.na{background:var(--surface2);color:var(--text3)}
   .ph-inv{font-size:13px;color:var(--text3)}
-
   .err{background:var(--danger-bg);border:.5px solid var(--danger);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;color:var(--danger);display:none;line-height:1.5}
   .err.show{display:block}
-
   .sec{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding:0 2px}
   .sec-t{font-size:15px;font-weight:600}
-
   .ex-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
   .ex-card{background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:12px 14px}
   .ex-name{font-size:12px;color:var(--text3);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ex-val{font-size:17px;font-weight:600}
-
   .asset-list{display:flex;flex-direction:column;gap:2px}
-  .asset-row{background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;transition:background .3s}
+  .asset-row{background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px}
   .asset-row.flash-up{animation:fup .6s ease}
   .asset-row.flash-dn{animation:fdn .6s ease}
   @keyframes fup{0%,100%{background:transparent}30%{background:rgba(12,163,12,.12)}}
   @keyframes fdn{0%,100%{background:transparent}30%{background:rgba(208,59,59,.12)}}
-  .a-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;letter-spacing:-.5px}
+  .a-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
   .a-info{flex:1;min-width:0}
   .a-name{font-size:15px;font-weight:500}
   .a-sub{font-size:12px;color:var(--text3);margin-top:2px}
@@ -90,9 +81,7 @@
   .a-chg{font-size:12px;margin-top:1px;font-weight:500}
   .a-chg.up{color:var(--success)}
   .a-chg.dn{color:var(--danger)}
-
   .skel{background:var(--surface2);border-radius:12px;height:68px;margin-bottom:2px}
-
   .form-card{background:var(--surface);border:.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px}
   .form-t{font-size:17px;font-weight:600;margin-bottom:18px}
   .type-row{display:flex;gap:8px;margin-bottom:18px}
@@ -107,7 +96,6 @@
   .btn-p{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
   .btn-p:active{opacity:.82;transform:scale(.98)}
   .btn-g{width:100%;padding:14px;background:transparent;color:var(--text2);border:.5px solid var(--border-strong);border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:8px}
-
   .pills{display:flex;gap:7px;margin-bottom:12px}
   .pill{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500;border:.5px solid var(--border-strong);background:var(--surface);color:var(--text2);cursor:pointer}
   .pill.active{background:var(--accent-bg);color:var(--accent);border-color:var(--accent)}
@@ -121,7 +109,6 @@
   .tr-right{text-align:right;flex-shrink:0}
   .tr-amt{font-size:14px;font-weight:600}
   .tr-date{font-size:12px;color:var(--text3);margin-top:2px}
-
   .chart-wrap{position:relative;height:200px;margin:12px 0 4px}
   .donut-legend{display:flex;flex-direction:column;gap:8px;margin-top:14px}
   .leg-row{display:flex;align-items:center;gap:9px;font-size:13px}
@@ -129,7 +116,6 @@
   .leg-name{flex:1;color:var(--text2)}
   .leg-val{color:var(--text);font-weight:500}
   .leg-pct{color:var(--text3);font-size:12px;min-width:36px;text-align:right}
-
   .tgt{background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:2px}
   .tgt-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .tgt-asset{font-size:15px;font-weight:600}
@@ -142,7 +128,6 @@
   .prog-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .5s ease}
   .prog-fill.done{background:var(--success)}
   .tgt-foot{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--text3)}
-
   .toast{position:fixed;bottom:calc(80px + var(--safe-bottom) + 12px);left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:11px 20px;border-radius:24px;font-size:14px;font-weight:500;z-index:200;opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;white-space:nowrap}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
   .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
@@ -166,9 +151,8 @@
   </div>
 </div>
 
-<!-- Portfolio -->
 <div id="page-portfolio" class="page active">
-  <div class="err" id="err-banner">Price feed issue — showing last known prices.</div>
+  <div class="err" id="err-banner">Price feed error — check your connection.</div>
   <div class="ph">
     <div class="ph-label">Total portfolio value</div>
     <div class="ph-value dim" id="total-val">Loading...</div>
@@ -187,7 +171,6 @@
   </div>
 </div>
 
-<!-- Add -->
 <div id="page-add" class="page">
   <div class="form-card">
     <div class="form-t">Record a trade</div>
@@ -230,7 +213,6 @@
   </div>
 </div>
 
-<!-- History -->
 <div id="page-history" class="page">
   <div class="pills" id="filter-pills">
     <div class="pill active" onclick="filterHist('all',this)">All</div>
@@ -240,11 +222,10 @@
   <div id="hist-list"></div>
 </div>
 
-<!-- Analytics -->
 <div id="page-analytics" class="page">
   <div class="ph" style="margin-bottom:14px">
     <div class="ph-label">Allocation</div>
-    <div class="chart-wrap"><canvas id="alloc-canvas" role="img" aria-label="Portfolio allocation donut chart"></canvas></div>
+    <div class="chart-wrap"><canvas id="alloc-canvas"></canvas></div>
     <div class="donut-legend" id="alloc-legend"></div>
   </div>
   <div class="sec"><span class="sec-t">Sell targets</span></div>
@@ -269,8 +250,6 @@
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-// ── Data ─────────────────────────────────────────────────────────────────────
-
 var SEED_TRADES = [
   {id:1, type:'buy', date:'2021-01-26',exchange:'Coinbase',   asset:'',    qty:null,    amount:10},
   {id:2, type:'buy', date:'2021-01-28',exchange:'Binance',    asset:'',    qty:null,    amount:100},
@@ -320,23 +299,22 @@ var SEED_TRADES = [
   {id:46,type:'buy', date:'2025-07-02',exchange:'Revolut',    asset:'',    qty:null,    amount:200},
 ];
 
-// qty = your actual holdings across all wallets
-// pair = Binance symbol. null means stablecoin ($1). cgId = CoinGecko fallback.
+// Each entry: sym, qty, cgId (CoinGecko), pair (Binance — null = stablecoin)
 var HOLDINGS = [
-  {sym:'BTC',  qty:0.06715,  pair:'BTCUSDT',   cgId:'bitcoin'},
-  {sym:'ETH',  qty:0.47971,  pair:'ETHUSDT',   cgId:'ethereum'},
-  {sym:'SOL',  qty:23.334,   pair:'SOLUSDT',   cgId:'solana'},
-  {sym:'XRP',  qty:689.11,   pair:'XRPUSDT',   cgId:'ripple'},
-  {sym:'BNB',  qty:0.3916,   pair:'BNBUSDT',   cgId:'binancecoin'},
-  {sym:'DOT',  qty:164.69,   pair:'DOTUSDT',   cgId:'polkadot'},
-  {sym:'DOGE', qty:216.58,   pair:'DOGEUSDT',  cgId:'dogecoin'},
-  {sym:'KAVA', qty:148.54,   pair:'KAVAUSDT',  cgId:'kava'},
-  {sym:'IMX',  qty:201.91,   pair:'IMXUSDT',   cgId:'immutable-x'},
-  {sym:'TRAC', qty:733.87,   pair:'TRACUSDT',  cgId:'origintrail'},
-  {sym:'CRO',  qty:159.02,   pair:'CROUSDT',   cgId:'crypto-com-chain'},
-  {sym:'PIXEL',qty:686.97,   pair:'PIXELUSDT', cgId:'pixels'},
-  {sym:'PENGU',qty:5031,     pair:'PENGUUSDT', cgId:'pudgy-penguins'},
-  {sym:'USDT', qty:658.78,   pair:null,        cgId:'tether'},
+  {sym:'BTC',  qty:0.06715,  cgId:'bitcoin',          pair:'BTCUSDT'},
+  {sym:'ETH',  qty:0.47971,  cgId:'ethereum',         pair:'ETHUSDT'},
+  {sym:'SOL',  qty:23.334,   cgId:'solana',           pair:'SOLUSDT'},
+  {sym:'XRP',  qty:689.11,   cgId:'ripple',           pair:'XRPUSDT'},
+  {sym:'BNB',  qty:0.3916,   cgId:'binancecoin',      pair:'BNBUSDT'},
+  {sym:'DOT',  qty:164.69,   cgId:'polkadot',         pair:'DOTUSDT'},
+  {sym:'DOGE', qty:216.58,   cgId:'dogecoin',         pair:'DOGEUSDT'},
+  {sym:'KAVA', qty:148.54,   cgId:'kava',             pair:'KAVAUSDT'},
+  {sym:'IMX',  qty:201.91,   cgId:'immutable-x',      pair:'IMXUSDT'},
+  {sym:'TRAC', qty:733.87,   cgId:'origintrail',      pair:'TRACUSDT'},
+  {sym:'CRO',  qty:159.02,   cgId:'crypto-com-chain', pair:'CROUSDT'},
+  {sym:'PIXEL',qty:686.97,   cgId:'pixels',           pair:'PIXELUSDT'},
+  {sym:'PENGU',qty:5031,     cgId:'pudgy-penguins',   pair:'PENGUUSDT'},
+  {sym:'USDT', qty:658.78,   cgId:'tether',           pair:null},
 ];
 
 var EXCHANGE_PROPS = {
@@ -360,17 +338,16 @@ var COLORS = {
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
-var usdPrices   = {};   // {BTC:{usd:60000,chg:2.3}, ...}
-var gbpRate     = null; // GBP per 1 USD  (e.g. 0.79)
-var currency    = 'GBP';
-var loaded      = false;
-var allocChart  = null;
-var tradeType   = 'buy';
-var histFilter  = 'all';
-var trades      = loadTrades();
-var ws          = null;
-var wsTimer     = null;
-var loadTimer   = null;
+var usdPrices  = {};  // {BTC:{usd:60000,chg:2.3}}
+var gbpRate    = 0.79; // fallback; overwritten by live rate
+var currency   = 'GBP';
+var loaded     = false;
+var allocChart = null;
+var tradeType  = 'buy';
+var histFilter = 'all';
+var trades     = loadTrades();
+var ws         = null;
+var wsTimer    = null;
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 function loadTrades(){
@@ -378,29 +355,26 @@ function loadTrades(){
   catch(e){return JSON.parse(JSON.stringify(SEED_TRADES));}
 }
 function saveTrades(){try{localStorage.setItem('ct_trades_v3',JSON.stringify(trades));}catch(e){}}
-
-function saveCache(){try{localStorage.setItem('ct_price_cache',JSON.stringify({p:usdPrices,r:gbpRate,ts:Date.now()}));}catch(e){}}
+function saveCache(){try{localStorage.setItem('ct_cache_v2',JSON.stringify({p:usdPrices,r:gbpRate,ts:Date.now()}));}catch(e){}}
 function loadCache(){
   try{
-    var s=localStorage.getItem('ct_price_cache');
-    if(!s)return false;
-    var c=JSON.parse(s);
-    if(Date.now()-c.ts>7200000)return false; // 2h max
-    usdPrices=c.p; gbpRate=c.r; return true;
+    var s=localStorage.getItem('ct_cache_v2');if(!s)return false;
+    var c=JSON.parse(s);if(Date.now()-c.ts>7200000)return false;
+    usdPrices=c.p;gbpRate=c.r||0.79;return true;
   }catch(e){return false;}
 }
 
-// ── Formatting ────────────────────────────────────────────────────────────────
+// ── Format ────────────────────────────────────────────────────────────────────
 function toDisplay(usdVal){
-  if(usdVal===null||usdVal===undefined||isNaN(usdVal))return'—';
-  if(currency==='GBP'&&gbpRate) usdVal=usdVal*gbpRate;
+  if(isNaN(usdVal)||usdVal===null||usdVal===undefined)return'—';
+  var v=currency==='GBP'?usdVal*gbpRate:usdVal;
   var sym=currency==='GBP'?'£':'$';
-  var abs=Math.abs(usdVal);
-  var dec=abs>=10000?0:abs>=100?0:abs>=1?2:abs>=0.01?4:6;
-  return(usdVal<0?'-':'')+sym+abs.toLocaleString('en-GB',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  var abs=Math.abs(v);
+  var dec=abs>=10000?0:abs>=100?2:abs>=1?2:abs>=0.01?4:6;
+  return(v<0?'-':'')+sym+abs.toLocaleString('en-GB',{minimumFractionDigits:dec,maximumFractionDigits:dec});
 }
 function toUSD(v){
-  if(v===null||v===undefined||isNaN(v))return'—';
+  if(isNaN(v)||v===null||v===undefined)return'—';
   var abs=Math.abs(v);
   var dec=abs>=1?2:abs>=0.01?4:6;
   return'$'+abs.toLocaleString('en-GB',{minimumFractionDigits:dec,maximumFractionDigits:dec});
@@ -409,23 +383,22 @@ function fNum(n,d){return n.toLocaleString('en-GB',{minimumFractionDigits:0,maxi
 function fPct(n){return(n>=0?'+':'')+n.toFixed(2)+'%';}
 function curSym(){return currency==='GBP'?'£':'$';}
 
-// ── Price fetching ────────────────────────────────────────────────────────────
-// Strategy:
-//   1. Load cache instantly if available
-//   2. Fetch snapshot from Binance REST (fast, no WS needed to start)
-//   3. Open WS for live ticking updates
-//   4. If Binance REST fails for a symbol, fall back to CoinGecko
-
-var BINANCE_REST = 'https://api.binance.com/api/v3/ticker/24hr?symbols=';
-var CG_REST      = 'https://api.coingecko.com/api/v3/simple/price?vs_currencies=usd&include_24hr_change=true&ids=';
-
-function fetchSnapshot(){
+// ── Prices: CoinGecko one call for everything ─────────────────────────────────
+// Simple, reliable, CORS-friendly. One fetch gets all assets + GBP rate.
+function fetchAllPrices(){
   setStatus('loading','Fetching prices...');
 
-  // Build list of Binance pairs needed
-  var pairs = HOLDINGS.filter(function(h){return h.pair;}).map(function(h){return'"'+h.pair+'"';});
-  pairs.push('"GBPUSDT"');
-  var url = BINANCE_REST + '[' + pairs.join(',') + ']';
+  // Stablecoins don't need fetching
+  HOLDINGS.filter(function(h){return !h.pair;}).forEach(function(h){
+    usdPrices[h.sym]={usd:1,chg:0};
+  });
+
+  var ids = HOLDINGS.filter(function(h){return h.pair;}).map(function(h){return h.cgId;}).join(',');
+  // Include GBP as a currency so we can derive the GBP/USD rate from BTC
+  var url = 'https://api.coingecko.com/api/v3/simple/price'
+          + '?ids=' + ids
+          + '&vs_currencies=usd,gbp'
+          + '&include_24hr_change=true';
 
   fetch(url)
     .then(function(r){
@@ -433,106 +406,63 @@ function fetchSnapshot(){
       return r.json();
     })
     .then(function(data){
-      // data is array of ticker objects
-      var missing = [];
-      data.forEach(function(t){
-        var price = parseFloat(t.lastPrice);
-        var chg   = parseFloat(t.priceChangePercent);
-        if(t.symbol==='GBPUSDT'){
-          gbpRate = 1/price; // USD→GBP
-          return;
-        }
-        var h = HOLDINGS.find(function(x){return x.pair===t.symbol;});
-        if(h){
-          usdPrices[h.sym] = {usd:price, chg:chg};
+      // Derive GBP rate from BTC (most liquid, tightest spread)
+      var btc=data['bitcoin'];
+      if(btc&&btc.usd&&btc.gbp) gbpRate=btc.gbp/btc.usd;
+
+      HOLDINGS.filter(function(h){return h.pair;}).forEach(function(h){
+        var d=data[h.cgId];
+        if(d&&d.usd){
+          usdPrices[h.sym]={usd:d.usd, chg:d.usd_24h_change||0};
+        } else {
+          console.warn('No price data for', h.sym, h.cgId);
         }
       });
 
-      // Check which symbols didn't come back (not on Binance)
-      HOLDINGS.forEach(function(h){
-        if(h.pair && !usdPrices[h.sym]) missing.push(h);
-      });
-
-      // Stable coins
-      HOLDINGS.filter(function(h){return !h.pair;}).forEach(function(h){
-        usdPrices[h.sym]={usd:1,chg:0};
-      });
-
-      // GBP rate fallback if GBPUSDT missing
-      if(!gbpRate) gbpRate = 0.79;
-
-      if(missing.length>0){
-        return fetchCoinGecko(missing).then(function(){
-          onPricesReady();
-        });
-      }
-      onPricesReady();
+      loaded=true;
+      saveCache();
+      var ts=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      setStatus('live','Updated '+ts);
+      document.getElementById('err-banner').classList.remove('show');
+      renderAll();
+      openWebSocket(); // layer WS on top for live ticking
     })
     .catch(function(err){
-      console.warn('Binance REST failed, trying CoinGecko:', err);
-      fetchAllFromCoinGecko();
+      console.error('CoinGecko fetch failed:', err);
+      if(loadCache()){
+        loaded=true;
+        setStatus('error','Offline · cached prices');
+        document.getElementById('err-banner').classList.add('show');
+        renderAll();
+      } else {
+        setStatus('error','Failed to load prices');
+        document.getElementById('err-banner').classList.add('show');
+      }
     });
 }
 
-function fetchCoinGecko(holdings){
-  var ids = holdings.map(function(h){return h.cgId;}).join(',');
-  return fetch(CG_REST+ids)
-    .then(function(r){return r.json();})
-    .then(function(data){
-      holdings.forEach(function(h){
-        var d=data[h.cgId];
-        if(d) usdPrices[h.sym]={usd:d.usd,chg:d.usd_24h_change||0};
-      });
-    })
-    .catch(function(e){console.warn('CoinGecko fallback failed:',e);});
-}
-
-function fetchAllFromCoinGecko(){
-  var ids = HOLDINGS.filter(function(h){return h.cgId&&h.pair;}).map(function(h){return h.cgId;}).join(',');
-  // Also get GBP rate
-  fetch(CG_REST+ids+'&vs_currencies=usd,gbp')
-    .then(function(r){return r.json();})
-    .then(function(data){
-      // Derive GBP rate from BTC USD vs GBP
-      var btc = data['bitcoin'];
-      if(btc&&btc.usd&&btc.gbp) gbpRate=btc.gbp/btc.usd;
-      else gbpRate=0.79;
-
-      HOLDINGS.forEach(function(h){
-        if(!h.pair){usdPrices[h.sym]={usd:1,chg:0};return;}
-        var d=data[h.cgId];
-        if(d) usdPrices[h.sym]={usd:d.usd,chg:d.usd_24h_change||0};
-      });
-      setStatus('live','Prices via CoinGecko');
-      onPricesReady();
-    })
-    .catch(function(e){
-      console.error('All price sources failed:',e);
-      setStatus('error','No price data available');
-      document.getElementById('err-banner').classList.add('show');
-    });
-}
-
-function onPricesReady(){
-  loaded=true;
-  saveCache();
-  var ts=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  setStatus('live','Live · updated '+ts);
-  renderAll();
-  openWebSocket(); // now open WS for live ticking
-}
-
-// ── WebSocket (live ticks after initial load) ─────────────────────────────────
+// ── WebSocket: Binance for live ticking (layered on top after initial load) ───
 function openWebSocket(){
-  if(ws&&(ws.readyState===0||ws.readyState===1)) return; // already open/connecting
+  if(ws&&(ws.readyState===0||ws.readyState===1))return;
 
-  var streams = HOLDINGS
+  // Only subscribe to pairs that actually exist on Binance
+  // Use individual streams (no batch URL encoding issues)
+  var streams=HOLDINGS
     .filter(function(h){return h.pair;})
-    .map(function(h){return h.pair.toLowerCase()+'@miniTicker';});
+    .map(function(h){return h.pair.toLowerCase()+'@miniTicker'});
   streams.push('gbpusdt@miniTicker');
 
   var url='wss://stream.binance.com:9443/stream?streams='+streams.join('/');
-  ws=new WebSocket(url);
+  try{
+    ws=new WebSocket(url);
+  }catch(e){
+    console.warn('WebSocket failed to open:',e);
+    return;
+  }
+
+  ws.onopen=function(){
+    setStatus('live','Live · Binance stream');
+  };
 
   ws.onmessage=function(e){
     try{
@@ -541,32 +471,31 @@ function openWebSocket(){
       if(!d||!d.s)return;
       var price=parseFloat(d.c);
 
-      if(d.s==='GBPUSDT'){gbpRate=1/price;return;}
+      if(d.s==='GBPUSDT'){
+        gbpRate=1/price;
+        return;
+      }
 
-      var h=HOLDINGS.find(function(x){return x.pair===d.s;});
+      var h=null;
+      for(var i=0;i<HOLDINGS.length;i++){
+        if(HOLDINGS[i].pair===d.s){h=HOLDINGS[i];break;}
+      }
       if(!h)return;
 
       var prev=usdPrices[h.sym];
-      var prevUSD=prev?prev.usd:price;
-      usdPrices[h.sym]={usd:price, chg:prev?prev.chg:0};
+      var prevUsd=prev?prev.usd:price;
+      usdPrices[h.sym]={usd:price,chg:prev?prev.chg:0};
 
-      if(loaded){
-        renderPortfolio();
-        if(Math.abs(price-prevUSD)/prevUSD>0.0001){ // only flash on meaningful change
-          flashRow(h.sym, price>prevUSD);
-        }
-      }
-    }catch(e){}
-  };
-
-  ws.onopen=function(){setStatus('live','Live · Binance stream');};
-
-  ws.onclose=function(){
-    clearTimeout(wsTimer);
-    wsTimer=setTimeout(openWebSocket,5000); // reconnect after 5s
+      renderPortfolio();
+      if(Math.abs(price-prevUsd)>0) flashRow(h.sym,price>prevUsd);
+    }catch(ex){}
   };
 
   ws.onerror=function(){ws.close();};
+  ws.onclose=function(){
+    clearTimeout(wsTimer);
+    wsTimer=setTimeout(openWebSocket,5000);
+  };
 }
 
 function flashRow(sym,up){
@@ -577,12 +506,12 @@ function flashRow(sym,up){
   el.classList.add(up?'flash-up':'flash-dn');
 }
 
-function setStatus(state,text){
-  document.getElementById('dot').className='dot '+state;
-  document.getElementById('status').textContent=text;
+function setStatus(s,t){
+  document.getElementById('dot').className='dot '+s;
+  document.getElementById('status').textContent=t;
 }
 
-// ── Currency toggle ───────────────────────────────────────────────────────────
+// ── Currency ──────────────────────────────────────────────────────────────────
 function setCurrency(c){
   currency=c;
   document.getElementById('btn-gbp').classList.toggle('active',c==='GBP');
@@ -590,19 +519,18 @@ function setCurrency(c){
   if(loaded)renderAll();
 }
 
-// ── Portfolio maths ───────────────────────────────────────────────────────────
+// ── Maths ─────────────────────────────────────────────────────────────────────
 function calcPortfolio(){
   var totalUSD=0;
   HOLDINGS.forEach(function(h){
     var p=usdPrices[h.sym];
     totalUSD+=h.qty*(p?p.usd:0);
   });
-  var rate=currency==='GBP'&&gbpRate?gbpRate:1;
-  var total=totalUSD*rate;
+  var total=currency==='GBP'?totalUSD*gbpRate:totalUSD;
   var buys=trades.filter(function(t){return t.type==='buy';}).reduce(function(s,t){return s+t.amount;},0);
   var sells=trades.filter(function(t){return t.type==='sell';}).reduce(function(s,t){return s+t.amount;},0);
   var investedGBP=buys-sells;
-  var invested=currency==='USD'&&gbpRate?investedGBP/gbpRate:investedGBP;
+  var invested=currency==='USD'?investedGBP/gbpRate:investedGBP;
   var pnl=total-invested;
   var pct=invested>0?pnl/invested*100:0;
   return{total:total,totalUSD:totalUSD,invested:invested,pnl:pnl,pct:pct};
@@ -626,24 +554,23 @@ function renderPortfolio(){
   tv.classList.remove('dim');
 
   var badge=document.getElementById('pnl-badge');
-  badge.textContent=(up?'+':'')+toDisplay(c.pnl/( currency==='GBP'&&gbpRate?gbpRate:1 ))+' ('+(up?'+':'')+c.pct.toFixed(1)+'%)';
+  var pnlUSD=currency==='GBP'?c.pnl/gbpRate:c.pnl;
+  badge.textContent=(up?'+':'')+toDisplay(pnlUSD)+' ('+(up?'+':'')+c.pct.toFixed(1)+'%)';
   badge.className='badge '+(up?'up':'dn');
 
   document.getElementById('inv-label').textContent='invested '+sym+Math.round(Math.abs(c.invested)).toLocaleString('en-GB');
 
-  // Exchange grid
   var propTotal=Object.values(EXCHANGE_PROPS).reduce(function(s,v){return s+v;},0);
-  var gbpTotal=c.totalUSD*(gbpRate||0.79);
+  var gbpTotal=c.totalUSD*gbpRate;
   var scale=propTotal>0?gbpTotal/propTotal:1;
   document.getElementById('ex-grid').innerHTML=Object.entries(EXCHANGE_PROPS)
     .sort(function(a,b){return b[1]-a[1];})
     .map(function(e){
       var gbpVal=e[1]*scale;
-      var dispVal=currency==='USD'&&gbpRate?gbpVal/gbpRate:gbpVal;
+      var dispVal=currency==='USD'?gbpVal/gbpRate:gbpVal;
       return'<div class="ex-card"><div class="ex-name">'+e[0]+'</div><div class="ex-val">'+sym+Math.round(dispVal).toLocaleString('en-GB')+'</div></div>';
     }).join('');
 
-  // Asset list
   var assets=HOLDINGS.map(function(h){
     var p=usdPrices[h.sym];
     return{sym:h.sym,qty:h.qty,usd:p?p.usd:0,chg:p?p.chg:null,val:h.qty*(p?p.usd:0)};
@@ -653,31 +580,27 @@ function renderPortfolio(){
     var col=COLORS[a.sym]||COLORS.DEFAULT;
     var chgEl=a.chg!==null?'<div class="a-chg '+(a.chg>=0?'up':'dn')+'">'+fPct(a.chg)+' 24h</div>':'';
     var qd=a.qty<0.001?fNum(a.qty,6):fNum(a.qty,4);
-    return[
-      '<div class="asset-row" id="row-'+a.sym+'">',
-      '<div class="a-icon" style="background:'+col+'22;color:'+col+'">'+a.sym.slice(0,3)+'</div>',
-      '<div class="a-info"><div class="a-name">'+a.sym+'</div><div class="a-sub">'+qd+' · '+toUSD(a.usd)+'</div></div>',
-      '<div class="a-right"><div class="a-val">'+toDisplay(a.val)+'</div>'+chgEl+'</div>',
-      '</div>'
-    ].join('');
+    return'<div class="asset-row" id="row-'+a.sym+'">'
+      +'<div class="a-icon" style="background:'+col+'22;color:'+col+'">'+a.sym.slice(0,3)+'</div>'
+      +'<div class="a-info"><div class="a-name">'+a.sym+'</div><div class="a-sub">'+qd+' · '+toUSD(a.usd)+'</div></div>'
+      +'<div class="a-right"><div class="a-val">'+toDisplay(a.val)+'</div>'+chgEl+'</div>'
+      +'</div>';
   }).join('');
 }
 
 function renderHistory(){
   var f=trades.slice().reverse();
-  if(histFilter==='buy') f=f.filter(function(t){return t.type==='buy';});
+  if(histFilter==='buy')f=f.filter(function(t){return t.type==='buy';});
   if(histFilter==='sell')f=f.filter(function(t){return t.type==='sell';});
   if(!f.length){document.getElementById('hist-list').innerHTML='<div class="empty">No trades yet</div>';return;}
   document.getElementById('hist-list').innerHTML=f.map(function(t){
     var s=t.type==='sell';
-    return[
-      '<div class="tr"><div class="tr-dot '+t.type+'"></div>',
-      '<div class="tr-info"><div class="tr-main">'+t.exchange+(t.asset?' · '+t.asset:'')+'</div>',
-      '<div class="tr-meta">'+(s?'Sell':'Buy')+(t.qty?' · '+fNum(t.qty,4)+' '+t.asset:'')+'</div></div>',
-      '<div class="tr-right"><div class="tr-amt" style="color:'+(s?'var(--danger)':'var(--text)')+'">',
-      (s?'-':'')+'£'+Math.abs(t.amount).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2}),
-      '</div><div class="tr-date">'+t.date+'</div></div></div>'
-    ].join('');
+    return'<div class="tr"><div class="tr-dot '+t.type+'"></div>'
+      +'<div class="tr-info"><div class="tr-main">'+t.exchange+(t.asset?' · '+t.asset:'')+'</div>'
+      +'<div class="tr-meta">'+(s?'Sell':'Buy')+(t.qty?' · '+fNum(t.qty,4)+' '+t.asset:'')+'</div></div>'
+      +'<div class="tr-right"><div class="tr-amt" style="color:'+(s?'var(--danger)':'var(--text)')+'">'
+      +(s?'-':'')+'£'+Math.abs(t.amount).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})
+      +'</div><div class="tr-date">'+t.date+'</div></div></div>';
   }).join('');
 }
 
@@ -707,9 +630,9 @@ function renderAnalytics(){
   });
 
   document.getElementById('alloc-legend').innerHTML=labels.map(function(l,i){
-    return'<div class="leg-row"><div class="leg-dot" style="background:'+cols[i]+'"></div>'+
-      '<span class="leg-name">'+l+'</span><span class="leg-val">'+toDisplay(data[i])+'</span>'+
-      '<span class="leg-pct">'+(data[i]/c.totalUSD*100).toFixed(1)+'%</span></div>';
+    return'<div class="leg-row"><div class="leg-dot" style="background:'+cols[i]+'"></div>'
+      +'<span class="leg-name">'+l+'</span><span class="leg-val">'+toDisplay(data[i])+'</span>'
+      +'<span class="leg-pct">'+(data[i]/c.totalUSD*100).toFixed(1)+'%</span></div>';
   }).join('');
 
   document.getElementById('tgt-list').innerHTML=TARGETS.map(function(t){
@@ -719,22 +642,20 @@ function renderAnalytics(){
     var done=pct>=100;
     var gap=t.targetUSD-live;
     var dec=t.targetUSD<1?4:0;
-    return[
-      '<div class="tgt">',
-      '<div class="tgt-hdr"><span class="tgt-asset">'+t.sym+'</span><span class="tgt-badge">SELL TARGET</span></div>',
-      '<div class="tgt-row"><span class="tgt-lbl">Live price</span><span class="tgt-val">'+toUSD(live)+'</span></div>',
-      '<div class="tgt-row"><span class="tgt-lbl">Target</span><span class="tgt-val">'+toUSD(t.targetUSD)+'</span></div>',
-      '<div class="tgt-row"><span class="tgt-lbl">Qty to sell</span><span class="tgt-val">'+t.qty+'</span></div>',
-      '<div class="tgt-note">'+t.note+'</div>',
-      '<div class="prog"><div class="prog-fill'+(done?' done':'\')+'" style="width:'+pct.toFixed(1)+'%"></div></div>',
-      '<div class="tgt-foot"><span>'+(done?'✓ Target reached!':pct.toFixed(0)+'% of target')+'</span>',
-      '<span>'+(gap>0?'$'+Math.abs(gap).toLocaleString('en-GB',{minimumFractionDigits:dec,maximumFractionDigits:dec})+' to go':'Above target')+'</span></div>',
-      '</div>'
-    ].join('');
+    return'<div class="tgt">'
+      +'<div class="tgt-hdr"><span class="tgt-asset">'+t.sym+'</span><span class="tgt-badge">SELL TARGET</span></div>'
+      +'<div class="tgt-row"><span class="tgt-lbl">Live price</span><span class="tgt-val">'+toUSD(live)+'</span></div>'
+      +'<div class="tgt-row"><span class="tgt-lbl">Target</span><span class="tgt-val">'+toUSD(t.targetUSD)+'</span></div>'
+      +'<div class="tgt-row"><span class="tgt-lbl">Qty to sell</span><span class="tgt-val">'+t.qty+'</span></div>'
+      +'<div class="tgt-note">'+t.note+'</div>'
+      +'<div class="prog"><div class="prog-fill'+(done?' done':'')+'" style="width:'+pct.toFixed(1)+'%"></div></div>'
+      +'<div class="tgt-foot"><span>'+(done?'✓ Target reached!':pct.toFixed(0)+'% of target')+'</span>'
+      +'<span>'+(gap>0?'$'+Math.abs(gap).toLocaleString('en-GB',{minimumFractionDigits:dec,maximumFractionDigits:dec})+' to go':'Above target')+'</span></div>'
+      +'</div>';
   }).join('');
 }
 
-// ── Navigation ────────────────────────────────────────────────────────────────
+// ── Nav ───────────────────────────────────────────────────────────────────────
 function showTab(t){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
@@ -751,9 +672,17 @@ function filterHist(f,el){
 }
 
 // ── Add trade ─────────────────────────────────────────────────────────────────
-function setType(t){tradeType=t;document.getElementById('btn-buy').classList.toggle('active',t==='buy');document.getElementById('btn-sell').classList.toggle('active',t==='sell');}
-document.getElementById('f-ex').addEventListener('change',function(){document.getElementById('f-ex-cw').style.display=this.value==='__c'?'block':'none';});
-document.getElementById('f-asset').addEventListener('change',function(){document.getElementById('f-asset-cw').style.display=this.value==='__c'?'block':'none';});
+function setType(t){
+  tradeType=t;
+  document.getElementById('btn-buy').classList.toggle('active',t==='buy');
+  document.getElementById('btn-sell').classList.toggle('active',t==='sell');
+}
+document.getElementById('f-ex').addEventListener('change',function(){
+  document.getElementById('f-ex-cw').style.display=this.value==='__c'?'block':'none';
+});
+document.getElementById('f-asset').addEventListener('change',function(){
+  document.getElementById('f-asset-cw').style.display=this.value==='__c'?'block':'none';
+});
 function submitTrade(){
   var date=document.getElementById('f-date').value;
   var ex=document.getElementById('f-ex').value;
@@ -771,7 +700,6 @@ function submitTrade(){
   setTimeout(function(){showTab('history');},500);
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(m){
   var el=document.getElementById('toast');
   el.textContent=m;el.classList.add('show');
@@ -781,21 +709,18 @@ function showToast(m){
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
 
-// Show cached prices immediately if we have them, then refresh in background
+// Show cached prices instantly while fresh ones load
 if(loadCache()){
   loaded=true;
-  setStatus('loading','Cached · updating...');
+  setStatus('loading','Cached · refreshing...');
   renderPortfolio();
 }
 
-fetchSnapshot();
+fetchAllPrices();
 
-// Reconnect WS when returning to app
 document.addEventListener('visibilitychange',function(){
   if(!document.hidden){
-    if(!ws||ws.readyState===WebSocket.CLOSED||ws.readyState===WebSocket.CLOSING){
-      if(loaded)openWebSocket();
-    }
+    fetchAllPrices();
   }
 });
 </script>
