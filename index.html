@@ -128,6 +128,41 @@
   .prog-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .5s ease}
   .prog-fill.done{background:var(--success)}
   .tgt-foot{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--text3)}
+
+  /* History swipe/action row */
+  .tr-wrap{position:relative;overflow:hidden;border-radius:12px;margin-bottom:2px}
+  .tr-actions{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:stretch}
+  .tr-action-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 18px;border:none;cursor:pointer;font-size:10px;font-weight:600;font-family:inherit;color:#fff;min-width:64px}
+  .tr-action-btn.edit{background:var(--accent)}
+  .tr-action-btn.del{background:var(--danger)}
+  .tr-action-btn svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tr{background:var(--surface);border:.5px solid var(--border);border-radius:0;padding:13px 14px;display:flex;align-items:center;gap:12px;position:relative;z-index:1;transition:transform .2s ease;margin-bottom:0}
+  .tr-wrap.open .tr{transform:translateX(-128px)}
+
+  /* Modal overlay */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;display:none;align-items:flex-end;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px calc(24px + var(--safe-bottom));width:100%;max-width:430px;max-height:90vh;overflow-y:auto}
+  .modal-title{font-size:17px;font-weight:600;margin-bottom:18px}
+  .modal-actions{display:flex;gap:8px;margin-top:4px}
+  .modal-actions .btn-p{flex:1}
+  .modal-actions .btn-g{flex:1;margin-top:0}
+
+  /* Stat cards for analytics */
+  .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}
+  .stat-card{background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:14px}
+  .stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+  .stat-value{font-size:20px;font-weight:700;letter-spacing:-.5px}
+  .stat-sub{font-size:12px;color:var(--text3);margin-top:3px}
+  .stat-value.up{color:var(--success)}
+  .stat-value.dn{color:var(--danger)}
+
+  /* Monthly bar chart */
+  .bar-chart{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:12px}
+  .bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px}
+  .bar-fill{width:100%;border-radius:3px 3px 0 0;min-height:3px;background:var(--accent);opacity:.7;transition:height .4s ease}
+  .bar-fill.current{opacity:1}
+  .bar-lbl{font-size:9px;color:var(--text3)}
   .toast{position:fixed;bottom:calc(80px + var(--safe-bottom) + 12px);left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:11px 20px;border-radius:24px;font-size:14px;font-weight:500;z-index:200;opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;white-space:nowrap}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
   .empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:14px}
@@ -264,15 +299,72 @@
 </div>
 
 <div id="page-analytics" class="page">
+  <!-- Key stats -->
+  <div class="stat-grid" id="stat-grid"></div>
+
+  <!-- Allocation donut -->
   <div class="ph" style="margin-bottom:14px">
     <div class="ph-label">Allocation</div>
     <div class="chart-wrap"><canvas id="alloc-canvas"></canvas></div>
     <div class="donut-legend" id="alloc-legend"></div>
   </div>
-  <div class="sec"><span class="sec-t">Sell targets</span></div>
-  <div id="tgt-list"></div>
+
+  <!-- Monthly invested bar chart -->
+  <div class="ph" style="margin-bottom:14px">
+    <div class="ph-label">Monthly investment</div>
+    <div class="bar-chart" id="monthly-bars"></div>
+  </div>
+
+  <!-- Per-asset P&L breakdown -->
+  <div class="sec"><span class="sec-t">Asset P&L</span></div>
+  <div id="pnl-list"></div>
 </div>
 
+
+<!-- Edit trade modal -->
+<div class="modal-overlay" id="edit-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Edit trade</div>
+    <input type="hidden" id="edit-id">
+    <div class="field"><label>Date</label><input type="date" id="edit-date"></div>
+    <div class="field"><label>Exchange / wallet</label><select id="edit-ex"></select></div>
+    <div class="field" id="edit-ex-cw" style="display:none">
+      <label>Exchange name</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="edit-ex-c" placeholder="e.g. Kraken" style="flex:1">
+        <button type="button" onclick="addExchange('edit-ex')" style="padding:12px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Add</button>
+      </div>
+    </div>
+    <!-- Transfer fields -->
+    <div id="edit-transfer-wrap" style="display:none">
+      <div class="field"><label>From wallet</label><select id="edit-from"></select></div>
+      <div class="field"><label>To wallet</label><select id="edit-to"></select></div>
+    </div>
+    <div class="field"><label>Asset</label><select id="edit-asset"></select></div>
+    <div class="field"><label>Quantity</label><input type="number" id="edit-qty" inputmode="decimal" step="any" min="0"></div>
+    <div class="field" id="edit-price-wrap">
+      <label id="edit-price-label">Price paid (GBP, optional)</label>
+      <input type="number" id="edit-amt" inputmode="decimal" step="0.01" min="0">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-p" onclick="saveEdit()">Save changes</button>
+      <button class="btn-g" onclick="document.getElementById('edit-modal').classList.remove('show')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm delete modal -->
+<div class="modal-overlay" id="del-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title">Delete this trade?</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.5" id="del-desc"></p>
+    <input type="hidden" id="del-id">
+    <div class="modal-actions">
+      <button class="btn-p" style="background:var(--danger)" onclick="confirmDelete()">Delete</button>
+      <button class="btn-g" onclick="document.getElementById('del-modal').classList.remove('show')">Cancel</button>
+    </div>
+  </div>
+</div>
 <div class="tab-bar">
   <button class="tab active" onclick="showTab('portfolio')" id="tab-portfolio">
     <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Portfolio
@@ -293,37 +385,45 @@
 <script>
 var SEED_TRADES = [];
 
-// Each entry: sym, qty, cgId (CoinGecko), pair (Binance — null = stablecoin)
-var HOLDINGS = [
-  {sym:'BTC',  qty:0.06715,  cgId:'bitcoin',          pair:'BTCUSDT'},
-  {sym:'ETH',  qty:0.47971,  cgId:'ethereum',         pair:'ETHUSDT'},
-  {sym:'SOL',  qty:23.334,   cgId:'solana',           pair:'SOLUSDT'},
-  {sym:'XRP',  qty:689.11,   cgId:'ripple',           pair:'XRPUSDT'},
-  {sym:'BNB',  qty:0.3916,   cgId:'binancecoin',      pair:'BNBUSDT'},
-  {sym:'DOT',  qty:164.69,   cgId:'polkadot',         pair:'DOTUSDT'},
-  {sym:'DOGE', qty:216.58,   cgId:'dogecoin',         pair:'DOGEUSDT'},
-  {sym:'KAVA', qty:148.54,   cgId:'kava',             pair:'KAVAUSDT'},
-  {sym:'IMX',  qty:201.91,   cgId:'immutable-x',      pair:'IMXUSDT'},
-  {sym:'TRAC', qty:733.87,   cgId:'origintrail',      pair:'TRACUSDT'},
-  {sym:'CRO',  qty:159.02,   cgId:'crypto-com-chain', pair:'CROUSDT'},
-  {sym:'PIXEL',qty:686.97,   cgId:'pixels',           pair:'PIXELUSDT'},
-  {sym:'PENGU',qty:5031,     cgId:'pudgy-penguins',   pair:'PENGUUSDT'},
-  {sym:'USDT', qty:658.78,   cgId:'tether',           pair:null},
-];
-
-var EXCHANGE_PROPS = {
-  'Revolut':3235,'Tangem':6069.89,'Crypto.com':1051.97,'Bybit':536.96,
-  'Coinbase':94.03,'Binance':143.89,'Metamask':278.28,
-  'Uniswap':20.34,'Phantom':12.87,'Radix':5.27,'Solflare':2.44
+// Holdings are derived from trade history — no hardcoded quantities
+// CoinGecko IDs for price lookups, keyed by ticker symbol
+var COIN_META = {
+  BTC:  {cgId:'bitcoin',          pair:'BTCUSDT'},
+  ETH:  {cgId:'ethereum',         pair:'ETHUSDT'},
+  SOL:  {cgId:'solana',           pair:'SOLUSDT'},
+  XRP:  {cgId:'ripple',           pair:'XRPUSDT'},
+  BNB:  {cgId:'binancecoin',      pair:'BNBUSDT'},
+  DOT:  {cgId:'polkadot',         pair:'DOTUSDT'},
+  DOGE: {cgId:'dogecoin',         pair:'DOGEUSDT'},
+  KAVA: {cgId:'kava',             pair:'KAVAUSDT'},
+  IMX:  {cgId:'immutable-x',      pair:'IMXUSDT'},
+  TRAC: {cgId:'origintrail',      pair:'TRACUSDT'},
+  CRO:  {cgId:'crypto-com-chain', pair:'CROUSDT'},
+  PIXEL:{cgId:'pixels',           pair:'PIXELUSDT'},
+  PENGU:{cgId:'pudgy-penguins',   pair:'PENGUUSDT'},
+  AVAX: {cgId:'avalanche-2',      pair:'AVAXUSDT'},
+  ADA:  {cgId:'cardano',          pair:'ADAUSDT'},
+  USDT: {cgId:'tether',           pair:null},
+  USDC: {cgId:'usd-coin',         pair:null},
 };
 
-var TARGETS = [
-  {sym:'SOL', targetUSD:180,    qty:0.5,  note:'Sell half when 2× — keep the rest riding'},
-  {sym:'BTC', targetUSD:92000,  qty:0.5,  note:'Sell half when 2× — keep the rest riding'},
-  {sym:'ETH', targetUSD:3700,   qty:1,    note:'Sell all to break even'},
-  {sym:'KAVA',targetUSD:1.2624, qty:0.792,note:'1.5× then leave 20% to ride'},
-  {sym:'TRAC',targetUSD:2.1,    qty:0.5,  note:'Sell half when 2× — keep the rest riding'},
-];
+// Derive current holdings from trade history
+function calcHoldings(){
+  var h={};
+  trades.forEach(function(t){
+    if(!t.asset)return;
+    var sym=t.asset;
+    if(!h[sym])h[sym]=0;
+    if(t.type==='buy')  h[sym]+=t.qty||0;
+    if(t.type==='sell') h[sym]-=t.qty||0;
+    // transfers don't change total qty, just move it between exchanges
+  });
+  // Remove dust / negative balances
+  Object.keys(h).forEach(function(sym){if(h[sym]<=0.000001)delete h[sym];});
+  return h;
+}
+
+var TARGETS = [];  // No hardcoded targets — user will add these in future
 
 var COLORS = {
   BTC:'#f7931a',ETH:'#627eea',SOL:'#9945ff',XRP:'#346aa9',BNB:'#f3ba2f',
@@ -382,35 +482,46 @@ function curSym(){return currency==='GBP'?'£':'$';}
 function fetchAllPrices(){
   setStatus('loading','Fetching prices...');
 
-  // Stablecoins don't need fetching
-  HOLDINGS.filter(function(h){return !h.pair;}).forEach(function(h){
-    usdPrices[h.sym]={usd:1,chg:0};
+  // Always fetch prices for the known coin set regardless of current holdings
+  // (user may add coins via trades that need prices)
+  var ids=Object.values(COIN_META)
+    .filter(function(m){return m.cgId&&m.pair;})
+    .map(function(m){return m.cgId;});
+  // Also add any traded assets we have meta for
+  var holdings=calcHoldings();
+  Object.keys(holdings).forEach(function(sym){
+    var m=COIN_META[sym];
+    if(m&&m.cgId&&ids.indexOf(m.cgId)===-1)ids.push(m.cgId);
   });
 
-  var ids = HOLDINGS.filter(function(h){return h.pair;}).map(function(h){return h.cgId;}).join(',');
-  // Include GBP as a currency so we can derive the GBP/USD rate from BTC
-  var url = 'https://api.coingecko.com/api/v3/simple/price'
-          + '?ids=' + ids
-          + '&vs_currencies=usd,gbp'
-          + '&include_24hr_change=true';
+  // Stablecoins always $1
+  Object.keys(COIN_META).forEach(function(sym){
+    if(!COIN_META[sym].pair) usdPrices[sym]={usd:1,chg:0};
+  });
+
+  if(ids.length===0){
+    loaded=true;
+    setStatus('live','No assets to price');
+    renderAll();
+    return;
+  }
+
+  var url='https://api.coingecko.com/api/v3/simple/price'
+        +'?ids='+ids.join(',')
+        +'&vs_currencies=usd,gbp'
+        +'&include_24hr_change=true';
 
   fetch(url)
-    .then(function(r){
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.json();
-    })
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(data){
-      // Derive GBP rate from BTC (most liquid, tightest spread)
       var btc=data['bitcoin'];
       if(btc&&btc.usd&&btc.gbp) gbpRate=btc.gbp/btc.usd;
 
-      HOLDINGS.filter(function(h){return h.pair;}).forEach(function(h){
-        var d=data[h.cgId];
-        if(d&&d.usd){
-          usdPrices[h.sym]={usd:d.usd, chg:d.usd_24h_change||0};
-        } else {
-          console.warn('No price data for', h.sym, h.cgId);
-        }
+      Object.keys(COIN_META).forEach(function(sym){
+        var m=COIN_META[sym];
+        if(!m.pair)return; // stablecoin already set
+        var d=data[m.cgId];
+        if(d&&d.usd) usdPrices[sym]={usd:d.usd,chg:d.usd_24h_change||0};
       });
 
       loaded=true;
@@ -419,18 +530,20 @@ function fetchAllPrices(){
       setStatus('live','Updated '+ts);
       document.getElementById('err-banner').classList.remove('show');
       renderAll();
-      openWebSocket(); // layer WS on top for live ticking
+      openWebSocket();
     })
     .catch(function(err){
-      console.error('CoinGecko fetch failed:', err);
+      console.error('Price fetch failed:',err);
       if(loadCache()){
         loaded=true;
         setStatus('error','Offline · cached prices');
         document.getElementById('err-banner').classList.add('show');
         renderAll();
       } else {
-        setStatus('error','Failed to load prices');
+        loaded=true; // allow app to render even without prices
+        setStatus('error','No price data');
         document.getElementById('err-banner').classList.add('show');
+        renderAll();
       }
     });
 }
@@ -438,58 +551,31 @@ function fetchAllPrices(){
 // ── WebSocket: Binance for live ticking (layered on top after initial load) ───
 function openWebSocket(){
   if(ws&&(ws.readyState===0||ws.readyState===1))return;
-
-  // Only subscribe to pairs that actually exist on Binance
-  // Use individual streams (no batch URL encoding issues)
-  var streams=HOLDINGS
-    .filter(function(h){return h.pair;})
-    .map(function(h){return h.pair.toLowerCase()+'@miniTicker'});
+  var streams=Object.keys(COIN_META)
+    .filter(function(sym){return COIN_META[sym].pair;})
+    .map(function(sym){return COIN_META[sym].pair.toLowerCase()+'@miniTicker'});
   streams.push('gbpusdt@miniTicker');
-
   var url='wss://stream.binance.com:9443/stream?streams='+streams.join('/');
-  try{
-    ws=new WebSocket(url);
-  }catch(e){
-    console.warn('WebSocket failed to open:',e);
-    return;
-  }
-
-  ws.onopen=function(){
-    setStatus('live','Live · Binance stream');
-  };
-
+  try{ws=new WebSocket(url);}catch(e){return;}
+  ws.onopen=function(){setStatus('live','Live · Binance stream');};
   ws.onmessage=function(e){
     try{
       var msg=JSON.parse(e.data);
-      var d=msg.data;
-      if(!d||!d.s)return;
+      var d=msg.data;if(!d||!d.s)return;
       var price=parseFloat(d.c);
-
-      if(d.s==='GBPUSDT'){
-        gbpRate=1/price;
-        return;
-      }
-
-      var h=null;
-      for(var i=0;i<HOLDINGS.length;i++){
-        if(HOLDINGS[i].pair===d.s){h=HOLDINGS[i];break;}
-      }
-      if(!h)return;
-
-      var prev=usdPrices[h.sym];
+      if(d.s==='GBPUSDT'){gbpRate=1/price;return;}
+      var sym=null;
+      Object.keys(COIN_META).forEach(function(s){if(COIN_META[s].pair===d.s)sym=s;});
+      if(!sym)return;
+      var prev=usdPrices[sym];
       var prevUsd=prev?prev.usd:price;
-      usdPrices[h.sym]={usd:price,chg:prev?prev.chg:0};
-
+      usdPrices[sym]={usd:price,chg:prev?prev.chg:0};
       renderPortfolio();
-      if(Math.abs(price-prevUsd)>0) flashRow(h.sym,price>prevUsd);
+      if(Math.abs(price-prevUsd)>0)flashRow(sym,price>prevUsd);
     }catch(ex){}
   };
-
   ws.onerror=function(){ws.close();};
-  ws.onclose=function(){
-    clearTimeout(wsTimer);
-    wsTimer=setTimeout(openWebSocket,5000);
-  };
+  ws.onclose=function(){clearTimeout(wsTimer);wsTimer=setTimeout(openWebSocket,5000);};
 }
 
 function flashRow(sym,up){
@@ -516,14 +602,15 @@ function setCurrency(c){
 
 // ── Maths ─────────────────────────────────────────────────────────────────────
 function calcPortfolio(){
+  var holdings=calcHoldings();
   var totalUSD=0;
-  HOLDINGS.forEach(function(h){
-    var p=usdPrices[h.sym];
-    totalUSD+=h.qty*(p?p.usd:0);
+  Object.keys(holdings).forEach(function(sym){
+    var p=usdPrices[sym];
+    totalUSD+=holdings[sym]*(p?p.usd:0);
   });
   var total=currency==='GBP'?totalUSD*gbpRate:totalUSD;
-  var buys=trades.filter(function(t){return t.type==='buy';}).reduce(function(s,t){return s+t.amount;},0);
-  var sells=trades.filter(function(t){return t.type==='sell';}).reduce(function(s,t){return s+t.amount;},0);
+  var buys=trades.filter(function(t){return t.type==='buy';}).reduce(function(s,t){return s+(t.amount||0);},0);
+  var sells=trades.filter(function(t){return t.type==='sell';}).reduce(function(s,t){return s+(t.amount||0);},0);
   var investedGBP=buys-sells;
   var invested=currency==='USD'?investedGBP/gbpRate:investedGBP;
   var pnl=total-invested;
@@ -541,37 +628,72 @@ function renderAll(){
 function renderPortfolio(){
   if(!loaded)return;
   var c=calcPortfolio();
+  var holdings=calcHoldings();
   var up=c.pnl>=0;
   var sym=curSym();
 
   var tv=document.getElementById('total-val');
-  tv.textContent=toDisplay(c.totalUSD);
+  tv.textContent=Object.keys(holdings).length===0?'£0.00':toDisplay(c.totalUSD);
   tv.classList.remove('dim');
 
   var badge=document.getElementById('pnl-badge');
-  var pnlUSD=currency==='GBP'?c.pnl/gbpRate:c.pnl;
-  badge.textContent=(up?'+':'')+toDisplay(pnlUSD)+' ('+(up?'+':'')+c.pct.toFixed(1)+'%)';
-  badge.className='badge '+(up?'up':'dn');
+  if(Object.keys(holdings).length===0){
+    badge.textContent='Add your first trade';
+    badge.className='badge na';
+    document.getElementById('inv-label').textContent='';
+  } else {
+    var pnlUSD=currency==='GBP'?c.pnl/gbpRate:c.pnl;
+    badge.textContent=(up?'+':'')+toDisplay(pnlUSD)+' ('+(up?'+':'')+c.pct.toFixed(1)+'%)';
+    badge.className='badge '+(up?'up':'dn');
+    document.getElementById('inv-label').textContent='invested '+sym+Math.round(Math.abs(c.invested)).toLocaleString('en-GB');
+  }
 
-  document.getElementById('inv-label').textContent='invested '+sym+Math.round(Math.abs(c.invested)).toLocaleString('en-GB');
-
-  var propTotal=Object.values(EXCHANGE_PROPS).reduce(function(s,v){return s+v;},0);
-  var gbpTotal=c.totalUSD*gbpRate;
-  var scale=propTotal>0?gbpTotal/propTotal:1;
-  document.getElementById('ex-grid').innerHTML=Object.entries(EXCHANGE_PROPS)
-    .sort(function(a,b){return b[1]-a[1];})
-    .map(function(e){
-      var gbpVal=e[1]*scale;
-      var dispVal=currency==='USD'?gbpVal/gbpRate:gbpVal;
+  // Exchange breakdown — derive from trades
+  var exMap={};
+  trades.forEach(function(t){
+    if(!t.asset||!t.exchange)return;
+    var p=usdPrices[t.asset];
+    if(!p)return;
+    // Approximate: allocate current value proportionally by buy qty per exchange
+    if(t.type==='buy'){
+      if(!exMap[t.exchange])exMap[t.exchange]=0;
+      exMap[t.exchange]+=(t.qty||0)*p.usd;
+    }
+    if(t.type==='sell'){
+      if(!exMap[t.exchange])exMap[t.exchange]=0;
+      exMap[t.exchange]-=(t.qty||0)*p.usd;
+    }
+    if(t.type==='transfer'){
+      if(!exMap[t.exchange])exMap[t.exchange]=0;
+      if(!exMap[t.toExchange])exMap[t.toExchange]=0;
+      var val=(t.qty||0)*p.usd;
+      exMap[t.exchange]-=val;
+      exMap[t.toExchange]+=val;
+    }
+  });
+  var exEntries=Object.entries(exMap).filter(function(e){return e[1]>0.01;}).sort(function(a,b){return b[1]-a[1];});
+  var exGrid=document.getElementById('ex-grid');
+  if(exEntries.length===0){
+    exGrid.innerHTML='<div class="empty" style="padding:16px 0;font-size:13px">No exchange data yet</div>';
+  } else {
+    exGrid.innerHTML=exEntries.map(function(e){
+      var dispVal=currency==='GBP'?e[1]*gbpRate:e[1];
       return'<div class="ex-card"><div class="ex-name">'+e[0]+'</div><div class="ex-val">'+sym+Math.round(dispVal).toLocaleString('en-GB')+'</div></div>';
     }).join('');
+  }
 
-  var assets=HOLDINGS.map(function(h){
-    var p=usdPrices[h.sym];
-    return{sym:h.sym,qty:h.qty,usd:p?p.usd:0,chg:p?p.chg:null,val:h.qty*(p?p.usd:0)};
-  }).filter(function(a){return a.val>0.01;}).sort(function(a,b){return b.val-a.val;});
+  // Asset list
+  var assetRows=Object.keys(holdings).map(function(s){
+    var p=usdPrices[s];
+    return{sym:s,qty:holdings[s],usd:p?p.usd:0,chg:p?p.chg:null,val:holdings[s]*(p?p.usd:0)};
+  }).filter(function(a){return a.val>0.001||a.qty>0;}).sort(function(a,b){return b.val-a.val;});
 
-  document.getElementById('asset-list').innerHTML=assets.map(function(a){
+  var al=document.getElementById('asset-list');
+  if(assetRows.length===0){
+    al.innerHTML='<div class="empty">No holdings yet — add a trade to get started</div>';
+    return;
+  }
+  al.innerHTML=assetRows.map(function(a){
     var col=COLORS[a.sym]||COLORS.DEFAULT;
     var chgEl=a.chg!==null?'<div class="a-chg '+(a.chg>=0?'up':'dn')+'">'+fPct(a.chg)+' 24h</div>':'';
     var qd=a.qty<0.001?fNum(a.qty,6):fNum(a.qty,4);
@@ -597,25 +719,204 @@ function renderHistory(){
     var exLine=isTransfer?(t.exchange+' → '+(t.toExchange||'?')):t.exchange;
     var amtStr=isTransfer?'':(isSell?'-':'')+'£'+Math.abs(t.amount||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
     var amtColor=isTransfer?'var(--text3)':isSell?'var(--danger)':'var(--text)';
-    return'<div class="tr">'
+    return '<div class="tr-wrap" id="wrap-'+t.id+'">'
+      +'<div class="tr" onclick="toggleTradeActions(''+t.id+'')">'
       +'<div class="tr-dot" style="background:'+dotCol+'"></div>'
       +'<div class="tr-info"><div class="tr-main">'+exLine+(t.asset?' · '+t.asset:'')+'</div>'
       +'<div class="tr-meta">'+label+(t.qty?' · '+fNum(t.qty,4)+' '+t.asset:'')+'</div></div>'
       +'<div class="tr-right"><div class="tr-amt" style="color:'+amtColor+'">'+amtStr+'</div>'
-      +'<div class="tr-date">'+t.date+'</div></div></div>';
+      +'<div class="tr-date">'+t.date+'</div></div>'
+      +'</div>'
+      +'<div class="tr-actions">'
+      +'<button class="tr-action-btn edit" onclick="openEdit(''+t.id+'')">'
+      +'<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+      +'Edit</button>'
+      +'<button class="tr-action-btn del" onclick="openDelete(''+t.id+'')">'
+      +'<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>'
+      +'Delete</button>'
+      +'</div>'
+      +'</div>';
   }).join('');
+  initSwipe();
 }
+
+var openWrapId=null;
+function toggleTradeActions(id){
+  var wrap=document.getElementById('wrap-'+id);
+  if(!wrap)return;
+  var isOpen=wrap.classList.contains('open');
+  // close all
+  document.querySelectorAll('.tr-wrap.open').forEach(function(w){w.classList.remove('open');});
+  if(!isOpen)wrap.classList.add('open');
+  openWrapId=isOpen?null:id;
+}
+
+function initSwipe(){
+  document.querySelectorAll('.tr-wrap').forEach(function(wrap){
+    var startX=0,startY=0,dragging=false;
+    wrap.addEventListener('touchstart',function(e){
+      startX=e.touches[0].clientX;
+      startY=e.touches[0].clientY;
+      dragging=true;
+    },{passive:true});
+    wrap.addEventListener('touchend',function(e){
+      if(!dragging)return;
+      var dx=e.changedTouches[0].clientX-startX;
+      var dy=e.changedTouches[0].clientY-startY;
+      if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>30){
+        var id=wrap.id.replace('wrap-','');
+        if(dx<0){
+          document.querySelectorAll('.tr-wrap.open').forEach(function(w){w.classList.remove('open');});
+          wrap.classList.add('open');
+        } else {
+          wrap.classList.remove('open');
+        }
+      }
+      dragging=false;
+    },{passive:true});
+  });
+}
+
+function openEdit(id){
+  var t=trades.find(function(x){return String(x.id)===String(id);});
+  if(!t)return;
+  document.querySelectorAll('.tr-wrap.open').forEach(function(w){w.classList.remove('open');});
+  document.getElementById('edit-id').value=t.id;
+  document.getElementById('edit-date').value=t.date;
+  document.getElementById('modal-title').textContent=t.type==='transfer'?'Edit transfer':'Edit trade';
+
+  var isTransfer=t.type==='transfer';
+  document.getElementById('edit-ex').parentElement.style.display=isTransfer?'none':'block';
+  document.getElementById('edit-transfer-wrap').style.display=isTransfer?'block':'none';
+  document.getElementById('edit-price-wrap').style.display=isTransfer?'none':'block';
+
+  populateDropdown('edit-ex', exchanges, t.exchange);
+  populateDropdown('edit-from', exchanges, t.exchange);
+  populateDropdown('edit-to', exchanges, t.toExchange||'');
+  populateDropdown('edit-asset', assets, t.asset);
+
+  document.getElementById('edit-qty').value=t.qty||'';
+  document.getElementById('edit-amt').value=t.amount||'';
+  document.getElementById('edit-price-label').textContent='Price paid in '+(currency==='GBP'?'GBP (£)':'USD ($)')+' (optional)';
+
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+function saveEdit(){
+  var id=document.getElementById('edit-id').value;
+  var idx=trades.findIndex(function(x){return String(x.id)===String(id);});
+  if(idx===-1)return;
+  var t=trades[idx];
+  t.date=document.getElementById('edit-date').value;
+  t.asset=document.getElementById('edit-asset').value;
+  t.qty=parseFloat(document.getElementById('edit-qty').value)||0;
+  if(t.type==='transfer'){
+    t.exchange=document.getElementById('edit-from').value;
+    t.toExchange=document.getElementById('edit-to').value;
+  } else {
+    t.exchange=document.getElementById('edit-ex').value;
+    var amt=parseFloat(document.getElementById('edit-amt').value)||0;
+    t.amount=currency==='USD'&&amt>0?amt*gbpRate:amt;
+  }
+  trades[idx]=t;
+  saveTrades();
+  document.getElementById('edit-modal').classList.remove('show');
+  renderHistory();
+  renderPortfolio();
+  showToast('Trade updated');
+}
+
+function openDelete(id){
+  var t=trades.find(function(x){return String(x.id)===String(id);});
+  if(!t)return;
+  document.querySelectorAll('.tr-wrap.open').forEach(function(w){w.classList.remove('open');});
+  document.getElementById('del-id').value=t.id;
+  var desc=t.type==='transfer'
+    ?'Transfer of '+fNum(t.qty,4)+' '+t.asset+' from '+t.exchange+' to '+(t.toExchange||'?')+' on '+t.date
+    :(t.type==='sell'?'Sell':'Buy')+' of '+fNum(t.qty||0,4)+' '+t.asset+' on '+t.date+(t.amount?' (£'+Math.abs(t.amount).toFixed(2)+')':'');
+  document.getElementById('del-desc').textContent=desc;
+  document.getElementById('del-modal').classList.add('show');
+}
+
+function confirmDelete(){
+  var id=document.getElementById('del-id').value;
+  trades=trades.filter(function(x){return String(x.id)!==String(id);});
+  saveTrades();
+  document.getElementById('del-modal').classList.remove('show');
+  renderHistory();
+  renderPortfolio();
+  showToast('Trade deleted');
+}
+
+function closeModal(e){
+  if(e.target.classList.contains('modal-overlay'))
+    e.target.classList.remove('show');
+}
+
+// Wire up edit-ex dropdown
+document.getElementById('edit-ex').addEventListener('change',function(){
+  document.getElementById('edit-ex-cw').style.display=this.value==='__add'?'block':'none';
+});
 
 function renderAnalytics(){
   if(!loaded)return;
   var c=calcPortfolio();
-  var assets=HOLDINGS.map(function(h){
-    var p=usdPrices[h.sym];
-    return{sym:h.sym,val:h.qty*(p?p.usd:0)};
+  var holdings=calcHoldings();
+  var sym=curSym();
+
+  // ── Key stats ──────────────────────────────────────────────────────────────
+  var buyTrades=trades.filter(function(t){return t.type==='buy';});
+  var sellTrades=trades.filter(function(t){return t.type==='sell';});
+  var totalBought=buyTrades.reduce(function(s,t){return s+(t.amount||0);},0);
+  var totalSold=sellTrades.reduce(function(s,t){return s+(t.amount||0);},0);
+  var numAssets=Object.keys(holdings).length;
+  var numTrades=buyTrades.length+sellTrades.length;
+  // Best performer by 24h change
+  var bestSym='—',bestChg=null;
+  Object.keys(holdings).forEach(function(s){
+    var p=usdPrices[s];if(!p)return;
+    if(bestChg===null||p.chg>bestChg){bestChg=p.chg;bestSym=s;}
+  });
+  var worstSym='—',worstChg=null;
+  Object.keys(holdings).forEach(function(s){
+    var p=usdPrices[s];if(!p)return;
+    if(worstChg===null||p.chg<worstChg){worstChg=p.chg;worstSym=s;}
+  });
+
+  // Convert invested to display currency
+  var investedGBP=totalBought-totalSold;
+  var investedDisp=currency==='USD'?investedGBP/gbpRate:investedGBP;
+  var totalDisp=c.total;
+  var pnlDisp=totalDisp-investedDisp;
+
+  document.getElementById('stat-grid').innerHTML=[
+    {label:'Total invested',  val:sym+Math.round(Math.abs(investedDisp)).toLocaleString('en-GB'), sub:numTrades+' trades', cls:''},
+    {label:'Current value',   val:sym+Math.round(totalDisp).toLocaleString('en-GB'),              sub:numAssets+' assets', cls:''},
+    {label:'Overall P&L',     val:(pnlDisp>=0?'+':'')+sym+Math.abs(pnlDisp).toLocaleString('en-GB',{maximumFractionDigits:0}),
+                              sub:(c.pct>=0?'+':'')+c.pct.toFixed(1)+'% return',                  cls:pnlDisp>=0?'up':'dn'},
+    {label:'Best 24h',        val:bestSym, sub:bestChg!==null?(bestChg>=0?'+':'')+bestChg.toFixed(2)+'%':'—', cls:'up'},
+  ].map(function(s){
+    return'<div class="stat-card"><div class="stat-label">'+s.label+'</div>'
+      +'<div class="stat-value '+s.cls+'">'+s.val+'</div>'
+      +'<div class="stat-sub">'+s.sub+'</div></div>';
+  }).join('');
+
+  // ── Allocation donut ───────────────────────────────────────────────────────
+  var assetArr=Object.keys(holdings).map(function(s){
+    var p=usdPrices[s];
+    return{sym:s,val:holdings[s]*(p?p.usd:0)};
   }).filter(function(a){return a.val>0.01;}).sort(function(a,b){return b.val-a.val;});
 
-  var top=assets.slice(0,6);
-  var other=assets.slice(6).reduce(function(s,a){return s+a.val;},0);
+  if(assetArr.length===0){
+    document.getElementById('alloc-legend').innerHTML='<div class="empty">No holdings yet</div>';
+    if(allocChart){allocChart.destroy();allocChart=null;}
+    document.getElementById('pnl-list').innerHTML='';
+    document.getElementById('monthly-bars').innerHTML='';
+    return;
+  }
+
+  var top=assetArr.slice(0,6);
+  var other=assetArr.slice(6).reduce(function(s,a){return s+a.val;},0);
   var labels=top.map(function(a){return a.sym;});
   var data=top.map(function(a){return a.val;});
   var cols=top.map(function(a){return COLORS[a.sym]||COLORS.DEFAULT;});
@@ -627,33 +928,75 @@ function renderAnalytics(){
     data:{labels:labels,datasets:[{data:data,backgroundColor:cols,borderColor:cols,borderWidth:2,hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'66%',
       plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){
-        return ctx.label+': '+toDisplay(ctx.raw)+' ('+(ctx.raw/c.totalUSD*100).toFixed(1)+'%)';
+        return ctx.label+': '+toDisplay(ctx.raw)+' ('+(c.totalUSD>0?(ctx.raw/c.totalUSD*100).toFixed(1):0)+'%)';
       }}}}}
   });
 
   document.getElementById('alloc-legend').innerHTML=labels.map(function(l,i){
     return'<div class="leg-row"><div class="leg-dot" style="background:'+cols[i]+'"></div>'
       +'<span class="leg-name">'+l+'</span><span class="leg-val">'+toDisplay(data[i])+'</span>'
-      +'<span class="leg-pct">'+(data[i]/c.totalUSD*100).toFixed(1)+'%</span></div>';
+      +'<span class="leg-pct">'+(c.totalUSD>0?(data[i]/c.totalUSD*100).toFixed(1):0)+'%</span></div>';
   }).join('');
 
-  document.getElementById('tgt-list').innerHTML=TARGETS.map(function(t){
-    var p=usdPrices[t.sym];
-    var live=p?p.usd:0;
-    var pct=t.targetUSD>0?Math.min(live/t.targetUSD*100,100):0;
-    var done=pct>=100;
-    var gap=t.targetUSD-live;
-    var dec=t.targetUSD<1?4:0;
-    return'<div class="tgt">'
-      +'<div class="tgt-hdr"><span class="tgt-asset">'+t.sym+'</span><span class="tgt-badge">SELL TARGET</span></div>'
-      +'<div class="tgt-row"><span class="tgt-lbl">Live price</span><span class="tgt-val">'+toUSD(live)+'</span></div>'
-      +'<div class="tgt-row"><span class="tgt-lbl">Target</span><span class="tgt-val">'+toUSD(t.targetUSD)+'</span></div>'
-      +'<div class="tgt-row"><span class="tgt-lbl">Qty to sell</span><span class="tgt-val">'+t.qty+'</span></div>'
-      +'<div class="tgt-note">'+t.note+'</div>'
-      +'<div class="prog"><div class="prog-fill'+(done?' done':'')+'" style="width:'+pct.toFixed(1)+'%"></div></div>'
-      +'<div class="tgt-foot"><span>'+(done?'✓ Target reached!':pct.toFixed(0)+'% of target')+'</span>'
-      +'<span>'+(gap>0?'$'+Math.abs(gap).toLocaleString('en-GB',{minimumFractionDigits:dec,maximumFractionDigits:dec})+' to go':'Above target')+'</span></div>'
-      +'</div>';
+  // ── Monthly investment bar chart ───────────────────────────────────────────
+  var monthMap={};
+  trades.filter(function(t){return t.type==='buy'||t.type==='sell';}).forEach(function(t){
+    var key=t.date.slice(0,7); // YYYY-MM
+    if(!monthMap[key])monthMap[key]=0;
+    monthMap[key]+=(t.type==='buy'?1:-1)*(t.amount||0);
+  });
+  var monthKeys=Object.keys(monthMap).sort().slice(-8); // last 8 months
+  var maxAmt=Math.max.apply(null,monthKeys.map(function(k){return Math.abs(monthMap[k]);}));
+  var nowKey=new Date().toISOString().slice(0,7);
+  document.getElementById('monthly-bars').innerHTML=monthKeys.map(function(k){
+    var amt=monthMap[k];
+    var pct=maxAmt>0?Math.abs(amt)/maxAmt*100:0;
+    var lbl=k.slice(5); // MM
+    var months=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var lblStr=months[parseInt(lbl,10)]||lbl;
+    return'<div class="bar-col">'
+      +'<div class="bar-fill'+(k===nowKey?' current':'')
+      +'" style="height:'+pct+'%;background:'+(amt<0?'var(--danger)':'var(--accent)')+'"></div>'
+      +'<div class="bar-lbl">'+lblStr+'</div></div>';
+  }).join('');
+
+  // ── Per-asset P&L breakdown ────────────────────────────────────────────────
+  // Cost basis per asset from buy trades
+  var costBasis={};
+  trades.filter(function(t){return t.type==='buy'&&t.asset&&t.qty;}).forEach(function(t){
+    if(!costBasis[t.asset])costBasis[t.asset]={cost:0,qty:0};
+    costBasis[t.asset].cost+=(t.amount||0);
+    costBasis[t.asset].qty+=t.qty;
+  });
+  trades.filter(function(t){return t.type==='sell'&&t.asset&&t.qty;}).forEach(function(t){
+    if(!costBasis[t.asset])return;
+    var avgCost=costBasis[t.asset].qty>0?costBasis[t.asset].cost/costBasis[t.asset].qty:0;
+    costBasis[t.asset].cost-=avgCost*t.qty;
+    costBasis[t.asset].qty-=t.qty;
+  });
+
+  var pnlRows=Object.keys(holdings).map(function(s){
+    var p=usdPrices[s];
+    var currentUSD=holdings[s]*(p?p.usd:0);
+    var costGBP=costBasis[s]?costBasis[s].cost:0;
+    var costDisp=currency==='USD'?costGBP/gbpRate:costGBP;
+    var currentDisp=currency==='GBP'?currentUSD*gbpRate:currentUSD;
+    var pnl=currentDisp-costDisp;
+    var pct=costDisp>0?pnl/costDisp*100:0;
+    return{sym:s,pnl:pnl,pct:pct,currentDisp:currentDisp,costDisp:costDisp};
+  }).sort(function(a,b){return b.pnl-a.pnl;});
+
+  document.getElementById('pnl-list').innerHTML=pnlRows.map(function(r){
+    var col=COLORS[r.sym]||COLORS.DEFAULT;
+    var up=r.pnl>=0;
+    return'<div class="asset-row" style="margin-bottom:2px">'
+      +'<div class="a-icon" style="background:'+col+'22;color:'+col+'">'+r.sym.slice(0,3)+'</div>'
+      +'<div class="a-info"><div class="a-name">'+r.sym+'</div>'
+      +'<div class="a-sub">cost '+sym+Math.abs(r.costDisp).toLocaleString('en-GB',{maximumFractionDigits:0})+'</div></div>'
+      +'<div class="a-right">'
+      +'<div class="a-val '+(up?'up':'dn')+'" style="font-size:14px;color:'+(up?'var(--success)':'var(--danger)')+'">'+( up?'+':'')+sym+Math.abs(r.pnl).toLocaleString('en-GB',{maximumFractionDigits:0})+'</div>'
+      +'<div class="a-chg '+(up?'up':'dn')+'">'+(up?'+':'')+r.pct.toFixed(1)+'%</div>'
+      +'</div></div>';
   }).join('');
 }
 
