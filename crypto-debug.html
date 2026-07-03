@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Price Debug</title>
+<style>
+  body { font-family: monospace; padding: 20px; background: #111; color: #eee; }
+  .ok  { color: #0f0; }
+  .err { color: #f44; }
+  .inf { color: #aaa; }
+  pre  { background: #222; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+  button { padding: 10px 20px; margin: 4px; background: #333; color: #eee; border: 1px solid #555; border-radius: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h2>🔍 Price Source Debug</h2>
+<p class="inf">Open this on your phone, tap each button, see what works.</p>
+<button onclick="testBinanceREST()">Test Binance REST</button>
+<button onclick="testCoinGecko()">Test CoinGecko</button>
+<button onclick="testBinanceWS()">Test Binance WebSocket</button>
+<button onclick="testKraken()">Test Kraken REST</button>
+<div id="out"></div>
+
+<script>
+function log(msg, cls) {
+  var d = document.getElementById('out');
+  var p = document.createElement('pre');
+  p.className = cls || '';
+  p.textContent = msg;
+  d.appendChild(p);
+}
+function clear() { document.getElementById('out').innerHTML = ''; }
+
+function testBinanceREST() {
+  clear();
+  log('Testing Binance REST API...', 'inf');
+  var t = Date.now();
+  fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT')
+    .then(function(r) {
+      log('HTTP ' + r.status + ' in ' + (Date.now()-t) + 'ms', r.ok ? 'ok' : 'err');
+      return r.json();
+    })
+    .then(function(d) { log('BTC price: ' + JSON.stringify(d), 'ok'); })
+    .catch(function(e) { log('FAILED: ' + e.message, 'err'); });
+}
+
+function testCoinGecko() {
+  clear();
+  log('Testing CoinGecko API...', 'inf');
+  var t = Date.now();
+  fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,gbp&include_24hr_change=true')
+    .then(function(r) {
+      log('HTTP ' + r.status + ' in ' + (Date.now()-t) + 'ms', r.ok ? 'ok' : 'err');
+      return r.json();
+    })
+    .then(function(d) { log(JSON.stringify(d, null, 2), 'ok'); })
+    .catch(function(e) { log('FAILED: ' + e.message, 'err'); });
+}
+
+function testBinanceWS() {
+  clear();
+  log('Opening Binance WebSocket...', 'inf');
+  var t = Date.now();
+  var ws = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@miniTicker');
+  ws.onopen  = function() { log('Connected in ' + (Date.now()-t) + 'ms', 'ok'); };
+  ws.onmessage = function(e) {
+    var d = JSON.parse(e.data);
+    log('Tick: BTC = $' + parseFloat(d.c).toFixed(2), 'ok');
+    ws.close();
+  };
+  ws.onerror = function(e) { log('WS ERROR: ' + (e.message||'connection failed'), 'err'); };
+  ws.onclose = function(e) { log('WS closed (code ' + e.code + ')', 'inf'); };
+  setTimeout(function() { if(ws.readyState !== 1) log('Timed out after 8s — WebSocket blocked', 'err'); }, 8000);
+}
+
+function testKraken() {
+  clear();
+  log('Testing Kraken REST API...', 'inf');
+  var t = Date.now();
+  fetch('https://api.kraken.com/0/public/Ticker?pair=XBTUSD')
+    .then(function(r) {
+      log('HTTP ' + r.status + ' in ' + (Date.now()-t) + 'ms', r.ok ? 'ok' : 'err');
+      return r.json();
+    })
+    .then(function(d) {
+      var price = d.result && d.result.XXBTZUSD && d.result.XXBTZUSD.c[0];
+      log('BTC price: $' + parseFloat(price).toFixed(2), 'ok');
+    })
+    .catch(function(e) { log('FAILED: ' + e.message, 'err'); });
+}
+</script>
+</body>
+</html>
