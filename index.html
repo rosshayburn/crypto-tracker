@@ -174,40 +174,80 @@
 <div id="page-add" class="page">
   <div class="form-card">
     <div class="form-t">Record a trade</div>
-    <div class="type-row">
-      <button class="type-btn active" id="btn-buy"  onclick="setType('buy')">Buy / Deposit</button>
-      <button class="type-btn"        id="btn-sell" onclick="setType('sell')">Sell / Withdraw</button>
+    <div class="type-row" style="flex-wrap:wrap;gap:6px">
+      <button class="type-btn active" id="btn-buy"      onclick="setType('buy')"      style="flex:1;min-width:120px">Buy / Deposit</button>
+      <button class="type-btn"        id="btn-sell"     onclick="setType('sell')"     style="flex:1;min-width:120px">Sell / Withdraw</button>
+      <button class="type-btn"        id="btn-transfer" onclick="setType('transfer')" style="flex:1 1 100%">Transfer between wallets</button>
     </div>
+
     <div class="field"><label>Date</label><input type="date" id="f-date"></div>
-    <div class="field">
-      <label>Exchange / wallet</label>
-      <select id="f-ex">
-        <option value="">Select...</option>
-        <option>Coinbase</option><option>Binance</option><option>Crypto.com</option>
-        <option>Bybit</option><option>Revolut</option><option>Tangem</option>
-        <option>Uniswap</option><option>Metamask</option><option>Radix</option>
-        <option>Solflare</option><option>Phantom</option><option>Pionex</option>
-        <option value="__c">Other...</option>
-      </select>
+
+    <!-- Buy/Sell: single exchange -->
+    <div id="f-ex-wrap">
+      <div class="field">
+        <label>Exchange / wallet</label>
+        <select id="f-ex"></select>
+      </div>
+      <div class="field" id="f-ex-cw" style="display:none">
+        <label>Exchange / wallet name</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="f-ex-c" placeholder="e.g. Kraken" style="flex:1">
+          <button type="button" onclick="addExchange('f-ex')" style="padding:12px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">Add</button>
+        </div>
+      </div>
     </div>
-    <div class="field" id="f-ex-cw" style="display:none"><label>Exchange name</label><input type="text" id="f-ex-c" placeholder="e.g. Kraken"></div>
+
+    <!-- Transfer: from + to wallets -->
+    <div id="f-transfer-wrap" style="display:none">
+      <div class="field">
+        <label>From wallet</label>
+        <select id="f-from"></select>
+      </div>
+      <div class="field" id="f-from-cw" style="display:none">
+        <label>Wallet name</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="f-from-c" placeholder="e.g. Ledger" style="flex:1">
+          <button type="button" onclick="addExchange('f-from')" style="padding:12px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">Add</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>To wallet</label>
+        <select id="f-to"></select>
+      </div>
+      <div class="field" id="f-to-cw" style="display:none">
+        <label>Wallet name</label>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="f-to-c" placeholder="e.g. Tangem" style="flex:1">
+          <button type="button" onclick="addExchange('f-to')" style="padding:12px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Asset -->
     <div class="field">
       <label>Asset</label>
-      <select id="f-asset">
-        <option value="">Select...</option>
-        <option>BTC</option><option>ETH</option><option>SOL</option><option>XRP</option>
-        <option>BNB</option><option>DOT</option><option>ADA</option><option>DOGE</option>
-        <option>AVAX</option><option>TRAC</option><option>KAVA</option><option>IMX</option>
-        <option>PIXEL</option><option>PENGU</option><option>CRO</option>
-        <option>USDT</option><option>USDC</option>
-        <option value="__c">Other...</option>
-      </select>
+      <select id="f-asset"></select>
     </div>
-    <div class="field" id="f-asset-cw" style="display:none"><label>Asset ticker</label><input type="text" id="f-asset-c" placeholder="e.g. LINK" style="text-transform:uppercase"></div>
-    <div class="field-row">
-      <div class="field"><label>Amount (£ GBP)</label><input type="number" id="f-amt" placeholder="100" inputmode="decimal" step="0.01" min="0"></div>
-      <div class="field"><label>Quantity (optional)</label><input type="number" id="f-qty" placeholder="0.001" inputmode="decimal" step="any" min="0"></div>
+    <div class="field" id="f-asset-cw" style="display:none">
+      <label>Asset ticker</label>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="f-asset-c" placeholder="e.g. LINK" style="flex:1;text-transform:uppercase">
+        <button type="button" onclick="addAsset()" style="padding:12px 16px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">Add</button>
+      </div>
     </div>
+
+    <!-- Quantity (always shown) -->
+    <div class="field">
+      <label>Quantity</label>
+      <input type="number" id="f-qty" placeholder="e.g. 0.005" inputmode="decimal" step="any" min="0">
+    </div>
+
+    <!-- Price paid (buy/sell only, optional) -->
+    <div class="field" id="f-price-wrap">
+      <label id="f-price-label">Price paid (optional)</label>
+      <input type="number" id="f-amt" placeholder="e.g. 250" inputmode="decimal" step="0.01" min="0">
+    </div>
+
     <button class="btn-p" onclick="submitTrade()">Save trade</button>
     <button class="btn-g" onclick="showTab('portfolio')">Cancel</button>
   </div>
@@ -218,6 +258,7 @@
     <div class="pill active" onclick="filterHist('all',this)">All</div>
     <div class="pill"        onclick="filterHist('buy',this)">Buys</div>
     <div class="pill"        onclick="filterHist('sell',this)">Sells</div>
+    <div class="pill"        onclick="filterHist('transfer',this)">Transfers</div>
   </div>
   <div id="hist-list"></div>
 </div>
@@ -250,54 +291,7 @@
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-var SEED_TRADES = [
-  {id:1, type:'buy', date:'2021-01-26',exchange:'Coinbase',   asset:'',    qty:null,    amount:10},
-  {id:2, type:'buy', date:'2021-01-28',exchange:'Binance',    asset:'',    qty:null,    amount:100},
-  {id:3, type:'buy', date:'2021-02-04',exchange:'Binance',    asset:'',    qty:null,    amount:100},
-  {id:4, type:'buy', date:'2021-02-10',exchange:'Binance',    asset:'',    qty:null,    amount:150},
-  {id:5, type:'buy', date:'2021-02-14',exchange:'Binance',    asset:'',    qty:null,    amount:150},
-  {id:6, type:'buy', date:'2021-03-01',exchange:'Binance',    asset:'',    qty:null,    amount:300},
-  {id:7, type:'buy', date:'2023-04-08',exchange:'Bybit',      asset:'',    qty:null,    amount:10},
-  {id:8, type:'buy', date:'2023-04-09',exchange:'Bybit',      asset:'',    qty:null,    amount:300},
-  {id:9, type:'buy', date:'2023-06-17',exchange:'Revolut',    asset:'',    qty:null,    amount:100},
-  {id:10,type:'buy', date:'2023-08-10',exchange:'Revolut',    asset:'',    qty:null,    amount:100},
-  {id:11,type:'buy', date:'2023-08-16',exchange:'Revolut',    asset:'',    qty:null,    amount:90},
-  {id:12,type:'buy', date:'2023-10-29',exchange:'Crypto.com', asset:'',    qty:null,    amount:247.06},
-  {id:13,type:'buy', date:'2023-11-02',exchange:'Crypto.com', asset:'',    qty:null,    amount:100},
-  {id:14,type:'buy', date:'2023-11-07',exchange:'Crypto.com', asset:'',    qty:null,    amount:100},
-  {id:15,type:'buy', date:'2023-11-11',exchange:'Crypto.com', asset:'',    qty:null,    amount:100},
-  {id:16,type:'buy', date:'2023-11-15',exchange:'Crypto.com', asset:'',    qty:null,    amount:50},
-  {id:17,type:'buy', date:'2023-11-15',exchange:'Crypto.com', asset:'',    qty:null,    amount:50},
-  {id:18,type:'buy', date:'2023-11-15',exchange:'Crypto.com', asset:'',    qty:null,    amount:50},
-  {id:19,type:'buy', date:'2023-11-29',exchange:'Crypto.com', asset:'',    qty:null,    amount:100},
-  {id:20,type:'buy', date:'2023-11-29',exchange:'Crypto.com', asset:'',    qty:null,    amount:100},
-  {id:21,type:'buy', date:'2023-12-01',exchange:'Revolut',    asset:'',    qty:null,    amount:60},
-  {id:22,type:'buy', date:'2023-12-16',exchange:'Revolut',    asset:'',    qty:null,    amount:150},
-  {id:23,type:'buy', date:'2024-01-01',exchange:'Revolut',    asset:'',    qty:null,    amount:150},
-  {id:24,type:'buy', date:'2024-01-01',exchange:'Revolut',    asset:'',    qty:null,    amount:50},
-  {id:25,type:'buy', date:'2024-01-01',exchange:'Revolut',    asset:'',    qty:null,    amount:100},
-  {id:26,type:'buy', date:'2024-01-08',exchange:'Crypto.com', asset:'',    qty:null,    amount:100},
-  {id:27,type:'buy', date:'2024-03-11',exchange:'Crypto.com', asset:'BTC', qty:0.001376,amount:100},
-  {id:28,type:'buy', date:'2024-03-11',exchange:'Crypto.com', asset:'ETH', qty:0.06958, amount:50},
-  {id:29,type:'buy', date:'2024-03-11',exchange:'Crypto.com', asset:'SOL', qty:0.6805,  amount:50},
-  {id:30,type:'buy', date:'2024-03-14',exchange:'Revolut',    asset:'BTC', qty:0.006393,amount:200},
-  {id:31,type:'buy', date:'2024-04-19',exchange:'Crypto.com', asset:'KAVA',qty:148.54,  amount:100},
-  {id:32,type:'buy', date:'2024-04-29',exchange:'Crypto.com', asset:'SOL', qty:1.2779,  amount:150},
-  {id:33,type:'buy', date:'2024-04-30',exchange:'Crypto.com', asset:'TRAC',qty:42.77,   amount:50},
-  {id:34,type:'buy', date:'2024-05-05',exchange:'Crypto.com', asset:'TRAC',qty:159.13,  amount:150},
-  {id:35,type:'buy', date:'2024-05-10',exchange:'Revolut',    asset:'BTC', qty:0.001969,amount:100},
-  {id:36,type:'buy', date:'2024-08-13',exchange:'Bybit',      asset:'',    qty:null,    amount:157.05},
-  {id:37,type:'buy', date:'2024-12-01',exchange:'Revolut',    asset:'',    qty:null,    amount:510},
-  {id:38,type:'sell',date:'2024-12-28',exchange:'Revolut',    asset:'',    qty:null,    amount:442.52},
-  {id:39,type:'sell',date:'2024-12-29',exchange:'Revolut',    asset:'',    qty:null,    amount:207.04},
-  {id:40,type:'buy', date:'2025-01-13',exchange:'Revolut',    asset:'',    qty:null,    amount:600},
-  {id:41,type:'buy', date:'2025-02-24',exchange:'Revolut',    asset:'',    qty:null,    amount:500},
-  {id:42,type:'buy', date:'2025-03-20',exchange:'Revolut',    asset:'',    qty:null,    amount:350},
-  {id:43,type:'buy', date:'2025-04-17',exchange:'Revolut',    asset:'',    qty:null,    amount:500},
-  {id:44,type:'buy', date:'2025-06-02',exchange:'Bybit',      asset:'',    qty:null,    amount:172.86},
-  {id:45,type:'buy', date:'2025-06-16',exchange:'Bybit',      asset:'',    qty:null,    amount:174.61},
-  {id:46,type:'buy', date:'2025-07-02',exchange:'Revolut',    asset:'',    qty:null,    amount:200},
-];
+var SEED_TRADES = [];
 
 // Each entry: sym, qty, cgId (CoinGecko), pair (Binance — null = stablecoin)
 var HOLDINGS = [
@@ -351,10 +345,10 @@ var wsTimer    = null;
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 function loadTrades(){
-  try{var s=localStorage.getItem('ct_trades_v3');return s?JSON.parse(s):JSON.parse(JSON.stringify(SEED_TRADES));}
-  catch(e){return JSON.parse(JSON.stringify(SEED_TRADES));}
+  try{var s=localStorage.getItem('ct_trades_v4');return s?JSON.parse(s):[];}
+  catch(e){return [];}
 }
-function saveTrades(){try{localStorage.setItem('ct_trades_v3',JSON.stringify(trades));}catch(e){}}
+function saveTrades(){try{localStorage.setItem('ct_trades_v4',JSON.stringify(trades));}catch(e){}}
 function saveCache(){try{localStorage.setItem('ct_cache_v2',JSON.stringify({p:usdPrices,r:gbpRate,ts:Date.now()}));}catch(e){}}
 function loadCache(){
   try{
@@ -516,6 +510,7 @@ function setCurrency(c){
   currency=c;
   document.getElementById('btn-gbp').classList.toggle('active',c==='GBP');
   document.getElementById('btn-usd').classList.toggle('active',c==='USD');
+  updatePriceLabel();
   if(loaded)renderAll();
 }
 
@@ -592,15 +587,22 @@ function renderHistory(){
   var f=trades.slice().reverse();
   if(histFilter==='buy')f=f.filter(function(t){return t.type==='buy';});
   if(histFilter==='sell')f=f.filter(function(t){return t.type==='sell';});
+  if(histFilter==='transfer')f=f.filter(function(t){return t.type==='transfer';});
   if(!f.length){document.getElementById('hist-list').innerHTML='<div class="empty">No trades yet</div>';return;}
   document.getElementById('hist-list').innerHTML=f.map(function(t){
-    var s=t.type==='sell';
-    return'<div class="tr"><div class="tr-dot '+t.type+'"></div>'
-      +'<div class="tr-info"><div class="tr-main">'+t.exchange+(t.asset?' · '+t.asset:'')+'</div>'
-      +'<div class="tr-meta">'+(s?'Sell':'Buy')+(t.qty?' · '+fNum(t.qty,4)+' '+t.asset:'')+'</div></div>'
-      +'<div class="tr-right"><div class="tr-amt" style="color:'+(s?'var(--danger)':'var(--text)')+'">'
-      +(s?'-':'')+'£'+Math.abs(t.amount).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})
-      +'</div><div class="tr-date">'+t.date+'</div></div></div>';
+    var isTransfer=t.type==='transfer';
+    var isSell=t.type==='sell';
+    var dotCol=isTransfer?'var(--accent)':isSell?'var(--danger)':'var(--success)';
+    var label=isTransfer?'Transfer':isSell?'Sell':'Buy';
+    var exLine=isTransfer?(t.exchange+' → '+(t.toExchange||'?')):t.exchange;
+    var amtStr=isTransfer?'':(isSell?'-':'')+'£'+Math.abs(t.amount||0).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+    var amtColor=isTransfer?'var(--text3)':isSell?'var(--danger)':'var(--text)';
+    return'<div class="tr">'
+      +'<div class="tr-dot" style="background:'+dotCol+'"></div>'
+      +'<div class="tr-info"><div class="tr-main">'+exLine+(t.asset?' · '+t.asset:'')+'</div>'
+      +'<div class="tr-meta">'+label+(t.qty?' · '+fNum(t.qty,4)+' '+t.asset:'')+'</div></div>'
+      +'<div class="tr-right"><div class="tr-amt" style="color:'+amtColor+'">'+amtStr+'</div>'
+      +'<div class="tr-date">'+t.date+'</div></div></div>';
   }).join('');
 }
 
@@ -677,26 +679,157 @@ function setType(t){
   document.getElementById('btn-buy').classList.toggle('active',t==='buy');
   document.getElementById('btn-sell').classList.toggle('active',t==='sell');
 }
-document.getElementById('f-ex').addEventListener('change',function(){
-  document.getElementById('f-ex-cw').style.display=this.value==='__c'?'block':'none';
+// ── Exchanges (persisted, user-extensible) ────────────────────────────────────
+var DEFAULT_EXCHANGES = [
+  'Coinbase','Binance','Crypto.com','Bybit','Revolut','Tangem',
+  'Uniswap','Metamask','Radix','Solflare','Phantom','Pionex'
+];
+var DEFAULT_ASSETS = ['BTC','ETH','SOL','XRP','USDT','USDC'];
+
+function loadExchanges(){
+  try{var s=localStorage.getItem('ct_exchanges_v1');return s?JSON.parse(s):DEFAULT_EXCHANGES.slice();}
+  catch(e){return DEFAULT_EXCHANGES.slice();}
+}
+function saveExchanges(){
+  try{localStorage.setItem('ct_exchanges_v1',JSON.stringify(exchanges));}catch(e){}
+}
+function loadAssets(){
+  try{var s=localStorage.getItem('ct_assets_v1');return s?JSON.parse(s):DEFAULT_ASSETS.slice();}
+  catch(e){return DEFAULT_ASSETS.slice();}
+}
+function saveAssets(){
+  try{localStorage.setItem('ct_assets_v1',JSON.stringify(assets));}catch(e){}
+}
+
+function populateDropdown(selectId, items, selectedVal){
+  var sel=document.getElementById(selectId);
+  if(!sel)return;
+  sel.innerHTML='<option value="">Select...</option>';
+  items.forEach(function(item){
+    var opt=document.createElement('option');
+    opt.value=item;opt.textContent=item;
+    if(item===selectedVal)opt.selected=true;
+    sel.appendChild(opt);
+  });
+  var add=document.createElement('option');
+  add.value='__add';
+  add.textContent=selectId.startsWith('f-asset')?'+ Add asset':'+ Add exchange / wallet';
+  sel.appendChild(add);
+}
+
+function populateExchangeDropdown(selectedVal){
+  populateDropdown('f-ex', exchanges, selectedVal);
+  populateDropdown('f-from', exchanges, selectedVal);
+  populateDropdown('f-to', exchanges, selectedVal);
+}
+function populateAssetDropdown(selectedVal){
+  populateDropdown('f-asset', assets, selectedVal);
+}
+
+function addExchange(sourceSelectId){
+  // find the paired custom input
+  var inputId = sourceSelectId+'-c';
+  var wrapId  = sourceSelectId+'-cw';
+  var val=document.getElementById(inputId).value.trim();
+  if(!val){document.getElementById(inputId).focus();return;}
+  if(exchanges.indexOf(val)===-1){exchanges.push(val);saveExchanges();}
+  populateExchangeDropdown(val);
+  // set the triggering select to the new value
+  document.getElementById(sourceSelectId).value=val;
+  document.getElementById(wrapId).style.display='none';
+  document.getElementById(inputId).value='';
+}
+
+function addAsset(){
+  var val=document.getElementById('f-asset-c').value.trim().toUpperCase();
+  if(!val){document.getElementById('f-asset-c').focus();return;}
+  if(assets.indexOf(val)===-1){assets.push(val);saveAssets();}
+  populateAssetDropdown(val);
+  document.getElementById('f-asset').value=val;
+  document.getElementById('f-asset-cw').style.display='none';
+  document.getElementById('f-asset-c').value='';
+}
+
+var exchanges=loadExchanges();
+var assets=loadAssets();
+populateExchangeDropdown();
+populateAssetDropdown();
+
+// Wire up exchange dropdowns
+['f-ex','f-from','f-to'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('change',function(){
+    var wrapId=id+'-cw';
+    var wrap=document.getElementById(wrapId);
+    if(wrap){
+      wrap.style.display=this.value==='__add'?'block':'none';
+      if(this.value==='__add') setTimeout(function(){document.getElementById(id+'-c').focus();},50);
+    }
+  });
 });
+
 document.getElementById('f-asset').addEventListener('change',function(){
-  document.getElementById('f-asset-cw').style.display=this.value==='__c'?'block':'none';
+  document.getElementById('f-asset-cw').style.display=this.value==='__add'?'block':'none';
+  if(this.value==='__add') setTimeout(function(){document.getElementById('f-asset-c').focus();},50);
 });
+
+function updatePriceLabel(){
+  var lbl=document.getElementById('f-price-label');
+  if(lbl) lbl.textContent='Price paid in '+(currency==='GBP'?'GBP (£)':'USD ($)')+' (optional)';
+}
+
+function setType(t){
+  tradeType=t;
+  document.getElementById('btn-buy').classList.toggle('active',t==='buy');
+  document.getElementById('btn-sell').classList.toggle('active',t==='sell');
+  document.getElementById('btn-transfer').classList.toggle('active',t==='transfer');
+  // Show/hide sections
+  var isTransfer=t==='transfer';
+  document.getElementById('f-ex-wrap').style.display=isTransfer?'none':'block';
+  document.getElementById('f-transfer-wrap').style.display=isTransfer?'block':'none';
+  document.getElementById('f-price-wrap').style.display=isTransfer?'none':'block';
+  updatePriceLabel();
+}
+
 function submitTrade(){
   var date=document.getElementById('f-date').value;
-  var ex=document.getElementById('f-ex').value;
-  if(ex==='__c')ex=document.getElementById('f-ex-c').value.trim();
+  if(!date){showToast('Please enter a date');return;}
+
   var asset=document.getElementById('f-asset').value;
-  if(asset==='__c')asset=document.getElementById('f-asset-c').value.trim().toUpperCase();
-  var amt=parseFloat(document.getElementById('f-amt').value)||0;
-  var qty=parseFloat(document.getElementById('f-qty').value)||null;
-  if(!date||!ex||!amt){showToast('Fill in date, exchange and amount');return;}
-  trades.push({id:Date.now(),type:tradeType,date:date,exchange:ex,asset:asset||'',qty:qty,amount:Math.abs(amt)});
+  if(!asset||asset==='__add'){showToast('Please select an asset');return;}
+
+  var qty=parseFloat(document.getElementById('f-qty').value);
+  if(!qty||qty<=0){showToast('Please enter a quantity');return;}
+
+  if(tradeType==='transfer'){
+    var from=document.getElementById('f-from').value;
+    var to=document.getElementById('f-to').value;
+    if(!from||from==='__add'){showToast('Please select the source wallet');return;}
+    if(!to||to==='__add'){showToast('Please select the destination wallet');return;}
+    if(from===to){showToast('Source and destination must be different');return;}
+    trades.push({id:Date.now(),type:'transfer',date:date,exchange:from,toExchange:to,asset:asset,qty:qty,amount:0});
+  } else {
+    var ex=document.getElementById('f-ex').value;
+    if(!ex||ex==='__add'){showToast('Please select an exchange');return;}
+    var amt=parseFloat(document.getElementById('f-amt').value)||0;
+    // Convert price to GBP for storage (always store in GBP)
+    var amtGBP=amt;
+    if(currency==='USD'&&amt>0) amtGBP=amt*gbpRate;
+    trades.push({id:Date.now(),type:tradeType,date:date,exchange:ex,asset:asset,qty:qty,amount:amtGBP});
+  }
+
   saveTrades();
-  ['f-ex','f-asset','f-amt','f-qty'].forEach(function(id){document.getElementById(id).value='';});
-  ['f-ex-cw','f-asset-cw'].forEach(function(id){document.getElementById(id).style.display='none';});
-  showToast('Trade saved');
+  // Reset form
+  ['f-ex','f-from','f-to','f-asset','f-amt','f-qty'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.value='';
+  });
+  ['f-ex-cw','f-from-cw','f-to-cw','f-asset-cw'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  populateExchangeDropdown();
+  populateAssetDropdown();
+  showToast('Saved');
   setTimeout(function(){showTab('history');},500);
 }
 
