@@ -479,72 +479,111 @@ function curSym(){return currency==='GBP'?'£':'$';}
 
 // ── Prices: CoinGecko one call for everything ─────────────────────────────────
 // Simple, reliable, CORS-friendly. One fetch gets all assets + GBP rate.
-function fetchAllPrices(){
-  setStatus('loading','Fetching prices...');
-
-  // Always fetch prices for the known coin set regardless of current holdings
-  // (user may add coins via trades that need prices)
-  var ids=Object.values(COIN_META)
-    .filter(function(m){return m.cgId&&m.pair;})
-    .map(function(m){return m.cgId;});
-  // Also add any traded assets we have meta for
-  var holdings=calcHoldings();
-  Object.keys(holdings).forEach(function(sym){
-    var m=COIN_META[sym];
-    if(m&&m.cgId&&ids.indexOf(m.cgId)===-1)ids.push(m.cgId);
+// Fetch with a hard timeout — never hangs
+function fetchWithTimeout(url, ms){
+  return new Promise(function(resolve, reject){
+    var timer=setTimeout(function(){ reject(new Error('timeout')); }, ms);
+    fetch(url).then(function(r){clearTimeout(timer);resolve(r);}).catch(function(e){clearTimeout(timer);reject(e);});
   });
+}
 
-  // Stablecoins always $1
+function applyPricesReady(){
   Object.keys(COIN_META).forEach(function(sym){
     if(!COIN_META[sym].pair) usdPrices[sym]={usd:1,chg:0};
   });
+  loaded=true;
+  saveCache();
+  var ts=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  setStatus('live','Updated '+ts);
+  document.getElementById('err-banner').classList.remove('show');
+  renderAll();
+  openWebSocket();
+}
 
-  if(ids.length===0){
+function onFetchFailed(err){
+  console.warn('All price sources failed:',err);
+  Object.keys(COIN_META).forEach(function(sym){
+    if(!COIN_META[sym].pair) usdPrices[sym]={usd:1,chg:0};
+  });
+  loaded=true;
+  setStatus('error','No prices — check connection');
+  document.getElementById('err-banner').classList.add('show');
+  renderAll();
+}
+
+function tryBinance(){
+  // Fetch each pair individually in parallel — fast, no batch encoding issues
+  var syms=Object.keys(COIN_META).filter(function(s){return COIN_META[s].pair;});
+  var promises=syms.map(function(s){
+    return fetchWithTimeout('https://api.binance.com/api/v3/ticker/24hr?symbol='+COIN_META[s].pair, 6000)
+      .then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});
+  });
+  // Also fetch GBP/USD rate
+  promises.push(
+    fetchWithTimeout('https://api.binance.com/api/v3/ticker/price?symbol=GBPUSDT', 6000)
+      .then(function(r){return r.ok?r.json():null;}).catch(function(){return null;})
+  );
+
+  return Promise.all(promises).then(function(results){
+    var anyLoaded=false;
+    // Last result is GBPUSDT
+    var gbpResult=results[results.length-1];
+    if(gbpResult&&gbpResult.price) gbpRate=1/parseFloat(gbpResult.price);
+
+    syms.forEach(function(sym,i){
+      var d=results[i];
+      if(!d||!d.lastPrice)return;
+      usdPrices[sym]={usd:parseFloat(d.lastPrice),chg:parseFloat(d.priceChangePercent)||0};
+      anyLoaded=true;
+    });
+    if(!anyLoaded) throw new Error('No Binance data');
+    return true;
+  });
+}
+
+function tryCoinGecko(){
+  var ids=Object.values(COIN_META)
+    .filter(function(m){return m.pair&&m.cgId;})
+    .map(function(m){return m.cgId;})
+    .filter(function(v,i,a){return a.indexOf(v)===i;});
+
+  return fetchWithTimeout(
+    'https://api.coingecko.com/api/v3/simple/price?ids='+ids.join(',')+'&vs_currencies=usd,gbp&include_24hr_change=true',
+    8000
+  ).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(data){
+    var btc=data['bitcoin'];
+    if(btc&&btc.usd&&btc.gbp) gbpRate=btc.gbp/btc.usd;
+    Object.keys(COIN_META).forEach(function(sym){
+      var m=COIN_META[sym];
+      if(!m.pair||!m.cgId)return;
+      var d=data[m.cgId];
+      if(d&&d.usd) usdPrices[sym]={usd:d.usd,chg:d.usd_24h_change||0};
+    });
+    return true;
+  });
+}
+
+function fetchAllPrices(){
+  setStatus('loading','Fetching prices...');
+
+  // Show cache immediately while fresh fetch runs
+  if(loadCache()&&!loaded){
     loaded=true;
-    setStatus('live','No assets to price');
+    setStatus('loading','Cached · refreshing...');
     renderAll();
-    return;
   }
 
-  var url='https://api.coingecko.com/api/v3/simple/price'
-        +'?ids='+ids.join(',')
-        +'&vs_currencies=usd,gbp'
-        +'&include_24hr_change=true';
-
-  fetch(url)
-    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-    .then(function(data){
-      var btc=data['bitcoin'];
-      if(btc&&btc.usd&&btc.gbp) gbpRate=btc.gbp/btc.usd;
-
-      Object.keys(COIN_META).forEach(function(sym){
-        var m=COIN_META[sym];
-        if(!m.pair)return; // stablecoin already set
-        var d=data[m.cgId];
-        if(d&&d.usd) usdPrices[sym]={usd:d.usd,chg:d.usd_24h_change||0};
-      });
-
-      loaded=true;
-      saveCache();
-      var ts=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      setStatus('live','Updated '+ts);
-      document.getElementById('err-banner').classList.remove('show');
-      renderAll();
-      openWebSocket();
-    })
-    .catch(function(err){
-      console.error('Price fetch failed:',err);
-      if(loadCache()){
-        loaded=true;
-        setStatus('error','Offline · cached prices');
-        document.getElementById('err-banner').classList.add('show');
-        renderAll();
-      } else {
-        loaded=true; // allow app to render even without prices
-        setStatus('error','No price data');
-        document.getElementById('err-banner').classList.add('show');
-        renderAll();
-      }
+  // Try Binance first (fastest, confirmed working), fall back to CoinGecko
+  tryBinance()
+    .then(function(){ applyPricesReady(); })
+    .catch(function(){
+      setStatus('loading','Trying backup source...');
+      tryCoinGecko()
+        .then(function(){ applyPricesReady(); })
+        .catch(function(e){ onFetchFailed(e); });
     });
 }
 
@@ -1185,19 +1224,10 @@ function showToast(m){
 // ── Boot ──────────────────────────────────────────────────────────────────────
 document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
 
-// Show cached prices instantly while fresh ones load
-if(loadCache()){
-  loaded=true;
-  setStatus('loading','Cached · refreshing...');
-  renderPortfolio();
-}
-
 fetchAllPrices();
 
 document.addEventListener('visibilitychange',function(){
-  if(!document.hidden){
-    fetchAllPrices();
-  }
+  if(!document.hidden) fetchAllPrices();
 });
 </script>
 </body>
