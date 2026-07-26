@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="CryptoTrack">
+<meta name="theme-color" content="#2a78d6">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <title>CryptoTrack</title>
 <style>
   :root {
@@ -487,6 +490,56 @@ function fetchWithTimeout(url, ms){
   });
 }
 
+// Every symbol currently in use — held, or available in the Add form —
+// so we know what needs a price even if Binance doesn't list it.
+function getAllTrackedSymbols(){
+  var syms={};
+  trades.forEach(function(t){if(t.asset)syms[t.asset]=true;});
+  assets.forEach(function(a){syms[a]=true;});
+  return Object.keys(syms);
+}
+
+// Fetch a single coin's price from CoinGecko by its known cgId
+function fetchCoinGeckoSingle(sym,cgId){
+  return fetchWithTimeout(
+    'https://api.coingecko.com/api/v3/simple/price?ids='+cgId+'&vs_currencies=usd&include_24hr_change=true',
+    8000
+  ).then(function(r){return r.ok?r.json():null;})
+  .then(function(data){
+    var d=data&&data[cgId];
+    if(d&&d.usd) usdPrices[sym]={usd:d.usd,chg:d.usd_24h_change||0};
+  }).catch(function(){});
+}
+
+// For a ticker we don't recognize at all (custom asset the user typed in),
+// ask CoinGecko's search to resolve it to a coin id, then fetch its price.
+// Once resolved, remember it for the rest of this session.
+function resolveAndFetchCustom(sym){
+  return fetchWithTimeout(
+    'https://api.coingecko.com/api/v3/search?query='+encodeURIComponent(sym),
+    8000
+  ).then(function(r){return r.ok?r.json():null;})
+  .then(function(data){
+    if(!data||!data.coins||!data.coins.length)return;
+    var match=data.coins.find(function(c){return c.symbol&&c.symbol.toUpperCase()===sym.toUpperCase();})||data.coins[0];
+    if(!match)return;
+    COIN_META[sym]={cgId:match.id,pair:null};
+    return fetchCoinGeckoSingle(sym,match.id);
+  }).catch(function(){});
+}
+
+// Catch-all: after the main fetch, top up any asset that still has no price —
+// e.g. Binance doesn't list TRACUSDT, so TRAC needs a direct CoinGecko lookup.
+function fillMissingAssetPrices(){
+  var missing=getAllTrackedSymbols().filter(function(s){return !usdPrices[s];});
+  if(!missing.length)return Promise.resolve();
+  return Promise.all(missing.map(function(sym){
+    var meta=COIN_META[sym];
+    if(meta&&meta.cgId) return fetchCoinGeckoSingle(sym,meta.cgId);
+    return resolveAndFetchCustom(sym);
+  }));
+}
+
 function applyPricesReady(){
   Object.keys(COIN_META).forEach(function(sym){
     if(!COIN_META[sym].pair) usdPrices[sym]={usd:1,chg:0};
@@ -498,6 +551,8 @@ function applyPricesReady(){
   document.getElementById('err-banner').classList.remove('show');
   renderAll();
   openWebSocket();
+  // Top up any assets Binance/CoinGecko's main batch missed (e.g. TRAC)
+  fillMissingAssetPrices().then(function(){saveCache();renderAll();});
 }
 
 function onFetchFailed(err){
@@ -509,6 +564,7 @@ function onFetchFailed(err){
   setStatus('error','No prices — check connection');
   document.getElementById('err-banner').classList.add('show');
   renderAll();
+  fillMissingAssetPrices().then(function(){renderAll();});
 }
 
 function tryBinance(){
@@ -1229,6 +1285,19 @@ fetchAllPrices();
 document.addEventListener('visibilitychange',function(){
   if(!document.hidden) fetchAllPrices();
 });
+
+// Assets with no Binance pair (like TRAC) don't get live WebSocket ticks,
+// so refresh those from CoinGecko every couple of minutes while the app is open.
+setInterval(function(){
+  if(!document.hidden&&loaded) fillMissingAssetPrices().then(function(){renderPortfolio();});
+},120000);
+
+// Register the service worker for offline app-shell caching and Android installability
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
