@@ -171,6 +171,19 @@
   .hist-key i{display:inline-block;width:14px;height:0;border-top:2px solid var(--accent);vertical-align:middle;margin-right:5px}
   .hist-key i.dash{border-top:2px dashed var(--text3)}
 
+  /* Full-screen chart */
+  .expand-btn,.fs-close{width:34px;height:34px;border-radius:50%;border:.5px solid var(--border-strong);background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;padding:0}
+  .expand-btn svg,.fs-close svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .fs-overlay{position:fixed;inset:0;z-index:400;background:var(--bg);display:none;flex-direction:column;gap:8px;
+    padding:calc(var(--safe-top) + 10px) max(env(safe-area-inset-right),14px) calc(var(--safe-bottom) + 10px) max(env(safe-area-inset-left),14px)}
+  .fs-overlay.show{display:flex}
+  .fs-bar{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .fs-title{font-size:15px;font-weight:600}
+  .fs-chart{flex:1;min-height:0;position:relative}
+  .fs-hint{margin-left:auto;display:none}
+  @media(orientation:portrait){.fs-hint{display:inline}}
+  @media(orientation:landscape){.fs-title{display:none}.fs-bar{justify-content:flex-start}.fs-bar .hist-pills{flex:1}.fs-bar .fs-close{margin-left:auto}}
+
   /* Tax tab */
   .tax-pills{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap}
   .tax-warn{background:var(--danger-bg);border:.5px solid var(--danger);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;color:var(--danger);line-height:1.5}
@@ -335,7 +348,12 @@
 
   <!-- Portfolio value over time -->
   <div class="ph" style="margin-bottom:14px">
-    <div class="ph-label">Portfolio value over time</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="ph-label" style="margin-bottom:0">Portfolio value over time</div>
+      <button class="expand-btn" onclick="openHistFull()" aria-label="Expand chart to full screen">
+        <svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
+    </div>
     <div class="hist-pills" id="range-pills">
       <div class="pill" onclick="setHistRange('1M',this)">1M</div>
       <div class="pill" onclick="setHistRange('3M',this)">3M</div>
@@ -364,6 +382,26 @@
   <!-- Per-asset P&L breakdown -->
   <div class="sec"><span class="sec-t">Asset P&L</span></div>
   <div id="pnl-list"></div>
+</div>
+
+<!-- Full-screen portfolio chart (rotate phone for landscape) -->
+<div class="fs-overlay" id="hist-fs">
+  <div class="fs-bar">
+    <div class="fs-title">Portfolio value</div>
+    <div class="hist-pills" id="range-pills-fs" style="margin:0">
+      <div class="pill" onclick="setHistRange('1M')">1M</div>
+      <div class="pill" onclick="setHistRange('3M')">3M</div>
+      <div class="pill" onclick="setHistRange('6M')">6M</div>
+      <div class="pill" onclick="setHistRange('1Y')">1Y</div>
+      <div class="pill active" onclick="setHistRange('All')">All</div>
+    </div>
+    <button class="fs-close" onclick="closeHistFull()" aria-label="Close full screen">
+      <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="fs-chart"><canvas id="hist-canvas-fs"></canvas></div>
+  <div class="hist-key"><span><i></i>Value</span><span><i class="dash"></i>Net invested</span><span class="fs-hint">Rotate your phone for a wider view</span></div>
+  <div class="hist-note" id="hist-note-fs"></div>
 </div>
 
 <div id="page-tax" class="page">
@@ -1286,12 +1324,28 @@ function buildHistory(){
   });
 }
 
-function setHistRange(r,el){
+function setHistRange(r){
   histRange=r;
-  document.querySelectorAll('#range-pills .pill').forEach(function(p){p.classList.remove('active');});
-  el.classList.add('active');
+  document.querySelectorAll('#range-pills .pill,#range-pills-fs .pill').forEach(function(p){
+    p.classList.toggle('active',p.textContent.trim()===r);
+  });
   drawHistChart();
 }
+
+// Full-screen view: tap the expand icon, then rotate the phone for landscape.
+// (iPhone web apps can't be forced into landscape, so the chart simply fills
+// whatever shape the screen is and re-fits when you rotate.)
+function openHistFull(){
+  document.getElementById('hist-fs').classList.add('show');
+  document.body.style.overflow='hidden';
+  drawHistChart();
+}
+function closeHistFull(){
+  document.getElementById('hist-fs').classList.remove('show');
+  document.body.style.overflow='';
+  if(histCharts['hist-canvas-fs']){histCharts['hist-canvas-fs'].destroy();delete histCharts['hist-canvas-fs'];}
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeHistFull();});
 
 function renderHistChart(){
   var note=document.getElementById('hist-note');
@@ -1307,9 +1361,15 @@ function renderHistChart(){
   });
 }
 
+var histCharts={};  // canvas id → Chart instance (inline card + full-screen view)
 function drawHistChart(){
-  var note=document.getElementById('hist-note');
-  if(histChart){histChart.destroy();histChart=null;}
+  drawHistInto('hist-canvas','hist-note',false);
+  if(document.getElementById('hist-fs').classList.contains('show'))
+    drawHistInto('hist-canvas-fs','hist-note-fs',true);
+}
+function drawHistInto(cv,noteId,big){
+  var note=document.getElementById(noteId);
+  if(histCharts[cv]){histCharts[cv].destroy();delete histCharts[cv];}
   if(!histSeries||!histSeries.length){note.textContent=histSeries?'Add a trade to see your portfolio history.':'';return;}
   if(typeof Chart==='undefined'){note.textContent='Chart library unavailable offline.';return;}
 
@@ -1336,7 +1396,8 @@ function drawHistChart(){
   function lbl(s){var m=mon[parseInt(s.slice(5,7),10)-1];return longRange?m+" '"+s.slice(2,4):parseInt(s.slice(8,10),10)+' '+m;}
   function money(v){return sym+Math.round(v).toLocaleString('en-GB');}
 
-  histChart=new Chart(document.getElementById('hist-canvas').getContext('2d'),{
+  var fs=big?12:10;
+  histCharts[cv]=new Chart(document.getElementById(cv).getContext('2d'),{
     type:'line',
     data:{labels:pts.map(function(p){return dayStr(p.d);}),datasets:[
       {label:'Value',data:vals,borderColor:accent,backgroundColor:accent+'22',fill:true,borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:.2},
@@ -1348,8 +1409,8 @@ function drawHistChart(){
         label:function(c){return c.dataset.label+': '+money(c.raw);}
       }}},
       scales:{
-        x:{grid:{display:false},ticks:{maxTicksLimit:5,maxRotation:0,font:{size:10},color:text3,callback:function(v){return lbl(this.getLabelForValue(v));}}},
-        y:{grid:{color:grid},ticks:{maxTicksLimit:5,font:{size:10},color:text3,callback:function(v){return sym+(Math.abs(v)>=1000?(v/1000).toFixed(v%1000?1:0)+'k':v);}}}
+        x:{grid:{display:false},ticks:{maxTicksLimit:big?10:5,maxRotation:0,font:{size:fs},color:text3,callback:function(v){return lbl(this.getLabelForValue(v));}}},
+        y:{grid:{color:grid},ticks:{maxTicksLimit:big?8:5,font:{size:fs},color:text3,callback:function(v){return sym+(Math.abs(v)>=1000?(v/1000).toFixed(v%1000?1:0)+'k':v);}}}
       }}
   });
 
