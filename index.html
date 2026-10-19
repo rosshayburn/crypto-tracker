@@ -56,6 +56,9 @@
   .ph-value{font-size:38px;font-weight:700;letter-spacing:-1.5px;line-height:1;margin-bottom:10px}
   .ph-value.dim{color:var(--text3)}
   .ph-sub{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .ph-24{font-size:13px;font-weight:500;margin-top:10px;color:var(--text3)}
+  .ph-24.up{color:var(--success)}
+  .ph-24.dn{color:var(--danger)}
   .badge{display:inline-flex;align-items:center;font-size:13px;font-weight:600;padding:4px 10px;border-radius:20px}
   .badge.up{background:var(--success-bg);color:var(--success)}
   .badge.dn{background:var(--danger-bg);color:var(--danger)}
@@ -160,6 +163,21 @@
   .stat-value.up{color:var(--success)}
   .stat-value.dn{color:var(--danger)}
 
+  /* Portfolio history chart */
+  .hist-pills{display:flex;gap:6px;margin:10px 0 0}
+  .hist-pills .pill{padding:5px 12px;font-size:12px}
+  .hist-note{font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5}
+  .hist-key{display:flex;gap:14px;font-size:11px;color:var(--text3);margin-top:6px}
+  .hist-key i{display:inline-block;width:14px;height:0;border-top:2px solid var(--accent);vertical-align:middle;margin-right:5px}
+  .hist-key i.dash{border-top:2px dashed var(--text3)}
+
+  /* Tax tab */
+  .tax-pills{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap}
+  .tax-warn{background:var(--danger-bg);border:.5px solid var(--danger);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;color:var(--danger);line-height:1.5}
+  .tax-info{background:var(--accent-bg);border:.5px solid var(--accent);border-radius:10px;padding:11px 14px;margin-bottom:12px;font-size:13px;color:var(--accent);line-height:1.5}
+  .tax-disc{font-size:12px;color:var(--text3);line-height:1.55;margin:14px 2px 0}
+  .tax-btn{margin-top:12px}
+
   /* Monthly bar chart */
   .bar-chart{display:flex;align-items:flex-end;gap:4px;height:80px;margin-top:12px}
   .bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px}
@@ -198,6 +216,7 @@
       <span class="badge na" id="pnl-badge">—</span>
       <span class="ph-inv" id="inv-label"></span>
     </div>
+    <div class="ph-24" id="chg24"></div>
   </div>
   <div class="sec"><span class="sec-t">By exchange</span></div>
   <div class="ex-grid" id="ex-grid"></div>
@@ -305,6 +324,21 @@
   <!-- Key stats -->
   <div class="stat-grid" id="stat-grid"></div>
 
+  <!-- Portfolio value over time -->
+  <div class="ph" style="margin-bottom:14px">
+    <div class="ph-label">Portfolio value over time</div>
+    <div class="hist-pills" id="range-pills">
+      <div class="pill" onclick="setHistRange('1M',this)">1M</div>
+      <div class="pill" onclick="setHistRange('3M',this)">3M</div>
+      <div class="pill" onclick="setHistRange('6M',this)">6M</div>
+      <div class="pill" onclick="setHistRange('1Y',this)">1Y</div>
+      <div class="pill active" onclick="setHistRange('All',this)">All</div>
+    </div>
+    <div class="chart-wrap"><canvas id="hist-canvas"></canvas></div>
+    <div class="hist-key"><span><i></i>Value</span><span><i class="dash"></i>Net invested</span></div>
+    <div class="hist-note" id="hist-note"></div>
+  </div>
+
   <!-- Allocation donut -->
   <div class="ph" style="margin-bottom:14px">
     <div class="ph-label">Allocation</div>
@@ -321,6 +355,11 @@
   <!-- Per-asset P&L breakdown -->
   <div class="sec"><span class="sec-t">Asset P&L</span></div>
   <div id="pnl-list"></div>
+</div>
+
+<div id="page-tax" class="page">
+  <div class="tax-pills" id="tax-pills"></div>
+  <div id="tax-body"></div>
 </div>
 
 
@@ -380,6 +419,9 @@
   </button>
   <button class="tab" onclick="showTab('analytics')" id="tab-analytics">
     <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analytics
+  </button>
+  <button class="tab" onclick="showTab('tax')" id="tab-tax">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>Tax
   </button>
 </div>
 
@@ -445,13 +487,21 @@ var histFilter = 'all';
 var trades     = loadTrades();
 var ws         = null;
 var wsTimer    = null;
+var histChart  = null;   // portfolio-over-time chart
+var histSeries = null;   // built lazily: [{d,usd,gbp,inv}] — null means "needs (re)building"
+var histBuilding = false;
+var histRange  = 'All';
+var taxSel     = null;   // selected tax year (start year, e.g. 2025 = 2025/26)
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 function loadTrades(){
   try{var s=localStorage.getItem('ct_trades_v4');return s?JSON.parse(s):[];}
   catch(e){return [];}
 }
-function saveTrades(){try{localStorage.setItem('ct_trades_v4',JSON.stringify(trades));}catch(e){}}
+function saveTrades(){
+  try{localStorage.setItem('ct_trades_v4',JSON.stringify(trades));}catch(e){}
+  histSeries=null; // trades changed → value history must be rebuilt
+}
 function saveCache(){try{localStorage.setItem('ct_cache_v2',JSON.stringify({p:usdPrices,r:gbpRate,ts:Date.now()}));}catch(e){}}
 function loadCache(){
   try{
@@ -479,6 +529,12 @@ function toUSD(v){
 function fNum(n,d){return n.toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:d||4});}
 function fPct(n){return(n>=0?'+':'')+n.toFixed(2)+'%';}
 function curSym(){return currency==='GBP'?'£':'$';}
+// Always-GBP money formatter (tax figures are GBP regardless of the display toggle)
+function gbp(n,dec){
+  var d=dec===undefined?2:dec;
+  return(n<0?'-':'')+'£'+Math.abs(n).toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function gbpSigned(n,dec){return(n>0?'+':'')+gbp(n,dec);}
 
 // ── Prices: CoinGecko one call for everything ─────────────────────────────────
 // Simple, reliable, CORS-friendly. One fetch gets all assets + GBP rate.
@@ -664,7 +720,10 @@ function openWebSocket(){
       if(!sym)return;
       var prev=usdPrices[sym];
       var prevUsd=prev?prev.usd:price;
-      usdPrices[sym]={usd:price,chg:prev?prev.chg:0};
+      // miniTicker carries the 24h open price (o) — keep the 24h change live too
+      var open=parseFloat(d.o);
+      var chg=open>0?(price-open)/open*100:(prev?prev.chg:0);
+      usdPrices[sym]={usd:price,chg:chg};
       renderPortfolio();
       if(Math.abs(price-prevUsd)>0)flashRow(sym,price>prevUsd);
     }catch(ex){}
@@ -718,6 +777,7 @@ function renderAll(){
   renderPortfolio();
   if(document.getElementById('page-history').classList.contains('active'))renderHistory();
   if(document.getElementById('page-analytics').classList.contains('active'))renderAnalytics();
+  if(document.getElementById('page-tax').classList.contains('active'))renderTax();
 }
 
 function renderPortfolio(){
@@ -741,6 +801,24 @@ function renderPortfolio(){
     badge.textContent=(up?'+':'')+toDisplay(pnlUSD)+' ('+(up?'+':'')+c.pct.toFixed(1)+'%)';
     badge.className='badge '+(up?'up':'dn');
     document.getElementById('inv-label').textContent='invested '+sym+Math.round(Math.abs(c.invested)).toLocaleString('en-GB');
+  }
+
+  // 24h portfolio change — from each asset's 24h % change, weighted by what you hold
+  var el24=document.getElementById('chg24');
+  var d24=0,prevTot=0;
+  Object.keys(holdings).forEach(function(s){
+    var p=usdPrices[s];
+    if(!p||p.chg===null||p.chg===undefined||1+p.chg/100<=0)return;
+    var prevPx=p.usd/(1+p.chg/100);
+    d24+=holdings[s]*(p.usd-prevPx);
+    prevTot+=holdings[s]*prevPx;
+  });
+  if(Object.keys(holdings).length===0||prevTot<=0){
+    el24.textContent='';el24.className='ph-24';
+  } else {
+    var pct24=d24/prevTot*100;
+    el24.textContent='24h  '+(d24>0?'+':'')+toDisplay(d24)+'  ('+fPct(pct24)+')';
+    el24.className='ph-24 '+(d24>=0?'up':'dn');
   }
 
   // Exchange breakdown — derive from trades
@@ -893,7 +971,6 @@ function openEdit(id){
   document.getElementById('edit-qty').value=t.qty||'';
   document.getElementById('edit-amt').value=t.amount||'';
   document.getElementById('edit-price-label').textContent='Price paid in '+(currency==='GBP'?'GBP (£)':'USD ($)')+' (optional)';
-
   document.getElementById('edit-modal').classList.add('show');
 }
 
@@ -996,6 +1073,9 @@ function renderAnalytics(){
       +'<div class="stat-sub">'+s.sub+'</div></div>';
   }).join('');
 
+  // ── Portfolio value over time ──────────────────────────────────────────────
+  renderHistChart();
+
   // ── Allocation donut ───────────────────────────────────────────────────────
   var assetArr=Object.keys(holdings).map(function(s){
     var p=usdPrices[s];
@@ -1095,6 +1175,380 @@ function renderAnalytics(){
   }).join('');
 }
 
+// ══ Portfolio value over time ═════════════════════════════════════════════════
+// Rebuilds what your portfolio was worth each day: the quantity you held that
+// day × that day's closing price. Prices come from Binance daily candles
+// (CoinGecko for coins Binance doesn't list). Cached on the phone for 6 hours.
+var DAY=86400000;
+function dayNum(s){return Math.floor(Date.parse(s+'T00:00:00Z')/DAY);}
+function dayStr(n){return new Date(n*DAY).toISOString().slice(0,10);}
+function todayNum(){return dayNum(new Date().toISOString().slice(0,10));}
+
+function loadHistCache(){try{return JSON.parse(localStorage.getItem('ct_hist_v1'))||{};}catch(e){return {};}}
+function saveHistCache(c){try{localStorage.setItem('ct_hist_v1',JSON.stringify(c));}catch(e){}}
+
+// Binance daily candles → {s:firstDay, c:[close,...]} (index = day - s)
+function fetchKlines(pair,startDay){
+  return fetchWithTimeout('https://api.binance.com/api/v3/klines?symbol='+pair+'&interval=1d&startTime='+(startDay*DAY)+'&limit=1000',10000)
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(k){
+      if(!k||!k.length)return null;
+      var s=Math.floor(k[0][0]/DAY),c=[];
+      k.forEach(function(row){c[Math.floor(row[0]/DAY)-s]=parseFloat(row[4]);});
+      return {s:s,c:c};
+    }).catch(function(){return null;});
+}
+// CoinGecko fallback (free tier only serves the last 365 days)
+function fetchGeckoHist(cgId){
+  return fetchWithTimeout('https://api.coingecko.com/api/v3/coins/'+cgId+'/market_chart?vs_currency=usd&days=365&interval=daily',10000)
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(j){
+      if(!j||!j.prices||!j.prices.length)return null;
+      var s=Math.floor(j.prices[0][0]/DAY),c=[];
+      j.prices.forEach(function(p){c[Math.floor(p[0]/DAY)-s]=p[1];});
+      return {s:s,c:c};
+    }).catch(function(){return null;});
+}
+function getSymHist(key,fetcher,fetchStart,cache){
+  var e=cache[key];
+  if(e&&Date.now()-e.t<6*3600000&&e.req<=fetchStart+1)return Promise.resolve(e);
+  return fetcher().then(function(h){
+    if(h){cache[key]={t:Date.now(),req:fetchStart,s:h.s,c:h.c};return cache[key];}
+    return e||null; // network failed → fall back to stale cache if we have one
+  });
+}
+function histPx(h,day){
+  if(!h||!h.c.length)return null;
+  var i=day-h.s;
+  if(i<0)i=0;
+  if(i>=h.c.length)i=h.c.length-1;
+  while(i>0&&(h.c[i]===undefined||h.c[i]===null))i--;
+  var v=h.c[i];
+  return(v===undefined||v===null)?null:v;
+}
+
+function buildHistory(){
+  var sorted=trades.filter(function(t){return t.date&&t.asset&&t.qty>0&&(t.type==='buy'||t.type==='sell');})
+    .map(function(t){return{d:dayNum(t.date),id:t.id,asset:t.asset,sg:t.type==='buy'?1:-1,qty:t.qty,amt:t.amount||0};})
+    .filter(function(t){return !isNaN(t.d);})
+    .sort(function(a,b){return a.d-b.d||(a.id-b.id);});
+  if(!sorted.length)return Promise.resolve([]);
+  var today=todayNum();
+  var start=Math.min(sorted[0].d,today);
+  var fetchStart=Math.max(start,today-990); // Binance returns max 1000 daily candles
+  var syms=[];
+  sorted.forEach(function(t){if(syms.indexOf(t.asset)<0)syms.push(t.asset);});
+  var cache=loadHistCache();
+
+  var jobs=syms.map(function(sym){
+    if(sym==='USDT'||sym==='USDC')return Promise.resolve(null); // priced at $1
+    var meta=COIN_META[sym];
+    if(meta&&meta.pair)return getSymHist(sym,function(){return fetchKlines(meta.pair,fetchStart);},fetchStart,cache);
+    if(meta&&meta.cgId)return getSymHist(sym,function(){return fetchGeckoHist(meta.cgId);},fetchStart,cache);
+    return Promise.resolve(null);
+  });
+  jobs.push(getSymHist('__GBP',function(){return fetchKlines('GBPUSDT',fetchStart);},fetchStart,cache));
+
+  return Promise.all(jobs).then(function(results){
+    saveHistCache(cache);
+    var fx=results[syms.length];
+    var hist={};
+    syms.forEach(function(s,i){hist[s]=results[i];});
+    var qty={},p=0,inv=0,out=[];
+    for(var d=start;d<=today;d++){
+      while(p<sorted.length&&sorted[p].d<=d){
+        var t=sorted[p++];
+        qty[t.asset]=(qty[t.asset]||0)+t.sg*t.qty;
+        inv+=t.sg*t.amt;
+      }
+      var usd=0;
+      Object.keys(qty).forEach(function(s){
+        if(qty[s]<=0.000001)return;
+        var price=(s==='USDT'||s==='USDC')?1:histPx(hist[s],d);
+        if(price===null)price=usdPrices[s]?usdPrices[s].usd:0; // no history for this coin → use today's price
+        usd+=qty[s]*price;
+      });
+      var fxClose=histPx(fx,d);
+      var rate=fxClose?1/fxClose:gbpRate;
+      out.push({d:d,usd:usd,gbp:usd*rate,inv:inv});
+    }
+    return out;
+  });
+}
+
+function setHistRange(r,el){
+  histRange=r;
+  document.querySelectorAll('#range-pills .pill').forEach(function(p){p.classList.remove('active');});
+  el.classList.add('active');
+  drawHistChart();
+}
+
+function renderHistChart(){
+  var note=document.getElementById('hist-note');
+  if(histSeries){drawHistChart();return;}
+  if(histBuilding)return;
+  histBuilding=true;
+  note.textContent='Building history from daily prices…';
+  buildHistory().then(function(s){
+    histSeries=s;histBuilding=false;drawHistChart();
+  }).catch(function(){
+    histBuilding=false;
+    note.textContent='Could not load price history — check your connection.';
+  });
+}
+
+function drawHistChart(){
+  var note=document.getElementById('hist-note');
+  if(histChart){histChart.destroy();histChart=null;}
+  if(!histSeries||!histSeries.length){note.textContent=histSeries?'Add a trade to see your portfolio history.':'';return;}
+  if(typeof Chart==='undefined'){note.textContent='Chart library unavailable offline.';return;}
+
+  var series=histSeries.map(function(p){return{d:p.d,usd:p.usd,gbp:p.gbp,inv:p.inv};});
+  // Make the last point match the live total shown on the Portfolio tab
+  var live=calcPortfolio();
+  var last=series[series.length-1];
+  if(last.d===todayNum()){last.usd=live.totalUSD;last.gbp=live.totalUSD*gbpRate;}
+
+  var days={'1M':30,'3M':91,'6M':182,'1Y':365,'All':null}[histRange];
+  var pts=days?series.filter(function(p){return p.d>=todayNum()-days;}):series;
+  if(pts.length<2)pts=series.slice(-2);
+  if(pts.length<2){note.textContent='Need at least two days of history.';return;}
+
+  var isGBP=currency==='GBP',sym=curSym();
+  var vals=pts.map(function(p){return isGBP?p.gbp:p.usd;});
+  var invs=pts.map(function(p){return isGBP?p.inv:p.inv/gbpRate;});
+  var css=getComputedStyle(document.documentElement);
+  var accent=css.getPropertyValue('--accent').trim()||'#2a78d6';
+  var text3=css.getPropertyValue('--text3').trim()||'#898781';
+  var grid=css.getPropertyValue('--border').trim()||'rgba(0,0,0,.08)';
+  var longRange=pts.length>200;
+  var mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function lbl(s){var m=mon[parseInt(s.slice(5,7),10)-1];return longRange?m+" '"+s.slice(2,4):parseInt(s.slice(8,10),10)+' '+m;}
+  function money(v){return sym+Math.round(v).toLocaleString('en-GB');}
+
+  histChart=new Chart(document.getElementById('hist-canvas').getContext('2d'),{
+    type:'line',
+    data:{labels:pts.map(function(p){return dayStr(p.d);}),datasets:[
+      {label:'Value',data:vals,borderColor:accent,backgroundColor:accent+'22',fill:true,borderWidth:2,pointRadius:0,pointHoverRadius:4,tension:.2},
+      {label:'Net invested',data:invs,borderColor:text3,borderDash:[5,4],borderWidth:1.5,pointRadius:0,pointHoverRadius:0,stepped:true,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:function(items){return items.length?lbl(items[0].label)+(longRange?'':' '+items[0].label.slice(0,4)):'';},
+        label:function(c){return c.dataset.label+': '+money(c.raw);}
+      }}},
+      scales:{
+        x:{grid:{display:false},ticks:{maxTicksLimit:5,maxRotation:0,font:{size:10},color:text3,callback:function(v){return lbl(this.getLabelForValue(v));}}},
+        y:{grid:{color:grid},ticks:{maxTicksLimit:5,font:{size:10},color:text3,callback:function(v){return sym+(Math.abs(v)>=1000?(v/1000).toFixed(v%1000?1:0)+'k':v);}}}
+      }}
+  });
+
+  // What changed over the period — separating new money from market movement
+  var v0=vals[0],v1=vals[vals.length-1],i0=invs[0],i1=invs[invs.length-1];
+  var deposits=i1-i0,market=(v1-v0)-deposits;
+  var base=v0+Math.max(deposits,0);
+  var pct=base>0?market/base*100:0;
+  note.textContent='Market movement over this period: '+(market>0?'+':'-')+money(Math.abs(market))
+    +(base>0?' ('+(pct>=0?'+':'')+pct.toFixed(1)+'%)':'')
+    +' · net deposits '+(deposits<0?'-':'')+money(Math.abs(deposits))
+    +'. Based on daily closing prices and the quantities you recorded.';
+}
+
+// ══ Tax / Capital Gains (UK) ══════════════════════════════════════════════════
+// Estimates capital gains on your SELL trades using the HMRC share-matching
+// rules, in this order:  1) same-day  2) next 30 days (bed & breakfast)
+// 3) the Section 104 pool (a running average cost of everything else you hold).
+// All figures are in GBP, using the "price paid" you entered on each trade.
+var AEA_BY_YEAR={2017:11300,2018:11700,2019:12000,2020:12300,2021:12300,2022:12300,2023:6000};
+function aeaFor(y){return y>=2024?3000:(AEA_BY_YEAR[y]||11300);}      // annual exempt amount
+function taxYearOf(s){                                              // UK tax year runs 6 Apr → 5 Apr
+  var y=+s.slice(0,4),m=+s.slice(5,7),d=+s.slice(8,10);
+  return(m>4||(m===4&&d>=6))?y:y-1;
+}
+function taxYearLabel(y){return y+'/'+String(y+1).slice(2);}
+
+function computeCGT(){
+  var res={disposals:[],pools:{},warn:{noProceeds:0,noCost:0,shortfall:0}};
+  var byAsset={};
+  trades.forEach(function(t){
+    if(!t.asset||!t.date||!(t.qty>0))return;
+    if(t.type!=='buy'&&t.type!=='sell')return;
+    (byAsset[t.asset]=byAsset[t.asset]||[]).push(t);
+  });
+  Object.keys(byAsset).forEach(function(sym){
+    var list=byAsset[sym].slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:(a.id-b.id);});
+    var acqs=[],disps=[];
+    list.forEach(function(t){
+      if(t.type==='buy'){
+        acqs.push({d:dayNum(t.date),qty:t.qty,cost:t.amount||0,rem:t.qty});
+        if(!t.amount)res.warn.noCost++;
+      } else {
+        disps.push({sym:sym,date:t.date,d:dayNum(t.date),qty:t.qty,proceeds:t.amount||0,
+          left:t.qty,cost:0,same:0,thirty:0,pool:0,short:0});
+        if(!t.amount)res.warn.noProceeds++;
+      }
+    });
+    var EPS=1e-9;
+    // Pass 1 — same-day, then 30-day matching (these acquisitions never enter the pool)
+    disps.forEach(function(dp){
+      acqs.forEach(function(a){
+        if(dp.left<=EPS||a.rem<=EPS||a.d!==dp.d)return;
+        var take=Math.min(a.rem,dp.left);
+        dp.cost+=a.cost*(take/a.qty);dp.same+=take;a.rem-=take;dp.left-=take;
+      });
+      acqs.forEach(function(a){
+        if(dp.left<=EPS||a.rem<=EPS||a.d<=dp.d||a.d>dp.d+30)return;
+        var take=Math.min(a.rem,dp.left);
+        dp.cost+=a.cost*(take/a.qty);dp.thirty+=take;a.rem-=take;dp.left-=take;
+      });
+    });
+    // Pass 2 — whatever is left comes out of the Section 104 pool at average cost
+    var pool={qty:0,cost:0},ai=0;
+    function addAcqsUpTo(day){
+      while(ai<acqs.length&&acqs[ai].d<=day){
+        var a=acqs[ai++];
+        if(a.rem>EPS){pool.qty+=a.rem;pool.cost+=a.cost*(a.rem/a.qty);}
+      }
+    }
+    disps.forEach(function(dp){
+      addAcqsUpTo(dp.d);
+      if(dp.left>EPS){
+        if(pool.qty>=dp.left-EPS){
+          var take=Math.min(pool.qty,dp.left);
+          var c=pool.qty>0?pool.cost*(take/pool.qty):0;
+          pool.qty-=take;pool.cost-=c;dp.cost+=c;dp.pool+=take;dp.left=0;
+        } else {
+          // Sold more than the trades you've recorded — the extra has no known cost
+          var c2=pool.cost;
+          dp.cost+=c2;dp.pool+=pool.qty;dp.short=dp.left-pool.qty;
+          pool.qty=0;pool.cost=0;dp.left=0;
+          res.warn.shortfall++;
+        }
+      }
+      dp.gain=dp.proceeds-dp.cost;
+      dp.ty=taxYearOf(dp.date);
+      res.disposals.push(dp);
+    });
+    addAcqsUpTo(1e9);
+    if(pool.qty>1e-8)res.pools[sym]={qty:pool.qty,cost:pool.cost};
+  });
+  res.disposals.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+  return res;
+}
+
+function taxSummary(res,ty){
+  var rows=res.disposals.filter(function(d){return d.ty===ty;});
+  var s={rows:rows,count:rows.length,proceeds:0,cost:0,gains:0,losses:0};
+  rows.forEach(function(d){
+    s.proceeds+=d.proceeds;s.cost+=d.cost;
+    if(d.gain>=0)s.gains+=d.gain;else s.losses+=d.gain;
+  });
+  s.net=s.gains+s.losses;
+  s.aea=aeaFor(ty);
+  s.taxable=Math.max(0,s.net-s.aea);
+  return s;
+}
+
+function renderTax(){
+  var res=computeCGT();
+  var nowTY=taxYearOf(new Date().toISOString().slice(0,10));
+  var years={};years[nowTY]=true;
+  res.disposals.forEach(function(d){years[d.ty]=true;});
+  var yl=Object.keys(years).map(Number).sort(function(a,b){return b-a;});
+  if(taxSel===null||yl.indexOf(taxSel)===-1){
+    taxSel=yl.filter(function(y){return res.disposals.some(function(d){return d.ty===y;});})[0]||nowTY;
+  }
+  document.getElementById('tax-pills').innerHTML=yl.map(function(y){
+    return'<div class="pill'+(y===taxSel?' active':'')+'" onclick="setTaxYear('+y+')">'+taxYearLabel(y)+'</div>';
+  }).join('');
+
+  var s=taxSummary(res,taxSel);
+  var html='';
+
+  // Data-quality warnings (these change the answer, so say so)
+  var w=res.warn,msgs=[];
+  if(w.noProceeds)msgs.push(w.noProceeds+' sell'+(w.noProceeds>1?'s have':' has')+' no price entered, so proceeds count as £0 and show as a loss.');
+  if(w.noCost)msgs.push(w.noCost+' buy'+(w.noCost>1?'s have':' has')+' no price entered, so cost counts as £0 and gains are overstated.');
+  if(w.shortfall)msgs.push(w.shortfall+' sell'+(w.shortfall>1?'s are':' is')+' for more than the coins your recorded buys cover, so the extra has £0 cost.');
+  if(msgs.length)html+='<div class="tax-warn">'+msgs.join('<br>')+'<br>Edit those trades in History to fix the figures.</div>';
+
+  if(s.proceeds>50000)html+='<div class="tax-info">Your disposal proceeds in '+taxYearLabel(taxSel)+' are over £50,000. HMRC generally expects these to be reported on a Self Assessment return even if the gain is under the exempt amount — check current HMRC guidance.</div>';
+
+  html+='<div class="stat-grid">'
+    +statCard('Disposals',String(s.count),'sells in '+taxYearLabel(taxSel),'')
+    +statCard('Proceeds',gbp(s.proceeds,0),'total sale value','')
+    +statCard('Allowable cost',gbp(s.cost,0),'matched cost','')
+    +statCard('Net gain / loss',gbpSigned(s.net,0),'gains '+gbp(s.gains,0)+' · losses '+gbp(Math.abs(s.losses),0),s.net>0?'up':s.net<0?'dn':'')
+    +statCard('Exempt amount',gbp(s.aea,0),'annual allowance','')
+    +statCard('Taxable gain',gbp(s.taxable,0),s.taxable>0?'after allowance':'nothing to pay on these figures',s.taxable>0?'dn':'')
+    +'</div>';
+
+  // Disposals
+  html+='<div class="sec"><span class="sec-t">Disposals</span></div>';
+  if(!s.rows.length){
+    html+='<div class="empty" style="padding:24px 20px">No sells recorded in '+taxYearLabel(taxSel)+'.</div>';
+  } else {
+    html+='<div class="asset-list">'+s.rows.slice().reverse().map(function(d){
+      var col=COLORS[d.sym]||COLORS.DEFAULT,up=d.gain>=0;
+      var how=[];
+      if(d.same>1e-9)how.push('same-day');
+      if(d.thirty>1e-9)how.push('30-day');
+      if(d.pool>1e-9)how.push('pool');
+      if(d.short>1e-9)how.push('no cost found');
+      return'<div class="asset-row">'
+        +'<div class="a-icon" style="background:'+col+'22;color:'+col+'">'+d.sym.slice(0,3)+'</div>'
+        +'<div class="a-info"><div class="a-name">Sold '+fNum(d.qty,6)+' '+d.sym+'</div>'
+        +'<div class="a-sub">'+d.date+' · '+how.join(' + ')+'</div>'
+        +'<div class="a-sub">proceeds '+gbp(d.proceeds)+' · cost '+gbp(d.cost)+'</div></div>'
+        +'<div class="a-right"><div class="a-val" style="color:'+(up?'var(--success)':'var(--danger)')+'">'+gbpSigned(d.gain)+'</div></div>'
+        +'</div>';
+    }).join('')+'</div>';
+  }
+
+  // Section 104 pools — what you still hold, and the average cost HMRC would use next
+  var poolSyms=Object.keys(res.pools).sort();
+  if(poolSyms.length){
+    html+='<div class="sec" style="margin-top:16px"><span class="sec-t">Section 104 pools (current)</span></div><div class="asset-list">'
+      +poolSyms.map(function(sy){
+        var p=res.pools[sy],col=COLORS[sy]||COLORS.DEFAULT;
+        return'<div class="asset-row">'
+          +'<div class="a-icon" style="background:'+col+'22;color:'+col+'">'+sy.slice(0,3)+'</div>'
+          +'<div class="a-info"><div class="a-name">'+sy+'</div><div class="a-sub">'+fNum(p.qty,6)+' pooled</div></div>'
+          +'<div class="a-right"><div class="a-val" style="font-size:14px">'+gbp(p.cost)+'</div>'
+          +'<div class="a-sub">avg '+gbp(p.qty>0?p.cost/p.qty:0,p.cost/p.qty<1?6:2)+' each</div></div>'
+          +'</div>';
+      }).join('')+'</div>';
+  }
+
+  html+='<button class="btn-g tax-btn" onclick="exportCGT()">Export disposals as CSV</button>';
+  html+='<div class="tax-disc">An estimate to help you prepare, not tax advice. It uses the prices you entered in GBP and ignores fees, '
+    +'staking or airdrop income, and gifts. Swapping one coin for another counts as a sale of the first — record it as a sell plus a buy '
+    +'at the £ value on the day. Rates and allowances change, so check HMRC or an accountant before filing.</div>';
+
+  document.getElementById('tax-body').innerHTML=html;
+}
+function statCard(label,val,sub,cls){
+  return'<div class="stat-card"><div class="stat-label">'+label+'</div><div class="stat-value '+cls+'" style="font-size:18px">'+val+'</div><div class="stat-sub">'+sub+'</div></div>';
+}
+function setTaxYear(y){taxSel=y;renderTax();}
+
+function exportCGT(){
+  var res=computeCGT();
+  var lines=['Date,Asset,Quantity,Proceeds GBP,Cost GBP,Gain GBP,Matching,Tax year'];
+  res.disposals.forEach(function(d){
+    var how=[];
+    if(d.same>1e-9)how.push('same-day');if(d.thirty>1e-9)how.push('30-day');if(d.pool>1e-9)how.push('pool');if(d.short>1e-9)how.push('no cost found');
+    lines.push([d.date,d.sym,d.qty,d.proceeds.toFixed(2),d.cost.toFixed(2),d.gain.toFixed(2),how.join('+'),taxYearLabel(d.ty)].join(','));
+  });
+  try{
+    var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download='cryptotrack-disposals.csv';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    showToast('CSV exported');
+  }catch(e){showToast('Export not supported here');}
+}
+
 // ── Nav ───────────────────────────────────────────────────────────────────────
 function showTab(t){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
@@ -1103,6 +1557,7 @@ function showTab(t){
   document.getElementById('tab-'+t).classList.add('active');
   if(t==='history')renderHistory();
   if(t==='analytics')renderAnalytics();
+  if(t==='tax')renderTax();
 }
 function filterHist(f,el){
   histFilter=f;
