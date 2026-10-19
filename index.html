@@ -1754,9 +1754,30 @@ function updateBackupNote(){
 function exportBackup(){
   var data={app:'cryptotrack',version:1,exported:new Date().toISOString(),
             trades:trades,exchanges:exchanges,assets:assets};
+  var stamp=new Date().toISOString().slice(0,10);
+  var fname='cryptotrack-backup-'+stamp+'.json';
+  var json=JSON.stringify(data,null,2);
+  function done(){
+    try{localStorage.setItem('ct_lastbackup',stamp);}catch(e){}
+    updateBackupNote();
+    showToast('Backup saved');
+  }
+  // iPhone / Android: open the share sheet (Save to Files, email, AirDrop…)
   try{
-    var stamp=new Date().toISOString().slice(0,10);
-    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    if(typeof File==='function'&&navigator.canShare&&navigator.share){
+      var f=new File([json],fname,{type:'application/json'});
+      if(navigator.canShare({files:[f]})){
+        navigator.share({files:[f],title:'CryptoTrack backup'}).then(done).catch(function(e){
+          if(e&&e.name==='AbortError')return; // user closed the sheet — not a backup
+          showToast('Could not share — try again');
+        });
+        return;
+      }
+    }
+  }catch(e){}
+  // Desktop fallback: plain file download
+  try{
+    var blob=new Blob([json],{type:'application/json'});
     var a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
     a.download='cryptotrack-backup-'+stamp+'.json';
