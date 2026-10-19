@@ -226,6 +226,15 @@
     <div class="skel" style="opacity:.6"></div>
     <div class="skel" style="opacity:.3"></div>
   </div>
+
+  <div class="sec" style="margin-top:18px"><span class="sec-t">Backup</span></div>
+  <div class="form-card" style="padding:16px">
+    <div class="tax-disc" style="margin:0 0 12px" id="backup-note"></div>
+    <button class="btn-p" onclick="exportBackup()">Download backup</button>
+    <button class="btn-g" onclick="document.getElementById('restore-file').click()">Restore from backup</button>
+    <input type="file" id="restore-file" accept=".json,application/json" style="display:none" onchange="restoreBackup(this)">
+    <div class="tax-disc" style="margin-bottom:0">Your trades live only on this phone. Download a backup now and then and keep the file somewhere safe (Drive, email to yourself). Restoring adds any trades that aren't already here and never deletes existing ones.</div>
+  </div>
 </div>
 
 <div id="page-add" class="page">
@@ -781,6 +790,7 @@ function renderAll(){
 }
 
 function renderPortfolio(){
+  updateBackupNote();
   if(!loaded)return;
   var c=calcPortfolio();
   var holdings=calcHoldings();
@@ -1730,6 +1740,67 @@ function showToast(m){
   var el=document.getElementById('toast');
   el.textContent=m;el.classList.add('show');
   setTimeout(function(){el.classList.remove('show');},2400);
+}
+
+// ── Backup / restore ──────────────────────────────────────────────────────────
+function updateBackupNote(){
+  var el=document.getElementById('backup-note');
+  if(!el)return;
+  var last='';
+  try{last=localStorage.getItem('ct_lastbackup')||'';}catch(e){}
+  el.textContent=trades.length+' trades saved on this phone · '+(last?'last backup '+last:'no backup downloaded yet');
+}
+
+function exportBackup(){
+  var data={app:'cryptotrack',version:1,exported:new Date().toISOString(),
+            trades:trades,exchanges:exchanges,assets:assets};
+  try{
+    var stamp=new Date().toISOString().slice(0,10);
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='cryptotrack-backup-'+stamp+'.json';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    try{localStorage.setItem('ct_lastbackup',stamp);}catch(e){}
+    updateBackupNote();
+    showToast('Backup downloaded');
+  }catch(e){showToast('Backup not supported here');}
+}
+
+function restoreBackup(input){
+  var file=input.files&&input.files[0];
+  if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var data=JSON.parse(reader.result);
+      if(!data||data.app!=='cryptotrack'||!Array.isArray(data.trades))throw new Error('not a CryptoTrack backup');
+      var have={};
+      trades.forEach(function(t){have[String(t.id)]=true;});
+      var added=0,skipped=0,seq=0;
+      data.trades.forEach(function(t){
+        var ok=t&&typeof t.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(t.date)
+          &&(t.type==='buy'||t.type==='sell'||t.type==='transfer')&&typeof t.asset==='string'&&t.asset;
+        if(!ok){skipped++;return;}
+        if(t.id===undefined||t.id===null)t.id=Date.now()+(seq++);
+        if(have[String(t.id)]){skipped++;return;}
+        have[String(t.id)]=true;
+        trades.push({id:t.id,type:t.type,date:t.date,exchange:t.exchange||'',toExchange:t.toExchange,
+          asset:t.asset,qty:Number(t.qty)||0,amount:Number(t.amount)||0});
+        added++;
+      });
+      if(Array.isArray(data.exchanges))data.exchanges.forEach(function(x){if(typeof x==='string'&&x&&exchanges.indexOf(x)===-1)exchanges.push(x);});
+      if(Array.isArray(data.assets))data.assets.forEach(function(x){if(typeof x==='string'&&x&&assets.indexOf(x)===-1)assets.push(x);});
+      trades.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:(a.id-b.id);});
+      saveTrades();saveExchanges();saveAssets();
+      populateExchangeDropdown();populateAssetDropdown();
+      renderAll();
+      showToast('Restored '+added+' trade'+(added===1?'':'s')+(skipped?' ('+skipped+' already here)':''));
+    }catch(e){showToast('That file is not a valid backup');}
+    input.value='';
+  };
+  reader.onerror=function(){showToast('Could not read file');input.value='';};
+  reader.readAsText(file);
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
